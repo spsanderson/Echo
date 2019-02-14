@@ -306,89 +306,64 @@ INSERT INTO [Secondary_Ins_Indicators_Detail] (
 	--,[REPORT-GROUP]
 )
 
- 
-
-SELECT [PA-PT-NO-WOSCD],
-
-[PA-PT-NO-SCD],
-
-[PA-INS-PLAN],
-
-[INS-PAY-AMT],
-
-CASE
-
-WHEN [RANK1] <> '1' AND LEFT([PA-INS-PLAN],1) IN ('U','D') AND [PA-INS-PLAN] NOT IN ('D03','D98','D01','D02','D101','D102','D99') THEN 1
-
-WHEN [RANK1] <> '1' AND LEFT([PA-INS-PLAN],1) NOT IN ('U','D') AND [IM-IND] ='JAIL' THEN 1
-
-ELSE 0
-
-END AS '2NDRY-MEDICAID-ELIGIBLE',
-
-CASE
-
-WHEN [RANK1] <> '1' AND [pa-ins-plan] IN ('D01','D02','D101','D102','D99') THEN 1
-
-ELSE 0
-
-END as '2NDRY-MEDICAID-FFS',
-
-CASE
-
-WHEN [RANK1] <> '1' AND [PA-INS-PLAN] IN ('K01','K20') THEN 1
-
-ELSE 0
-
-END AS '2NDRY-MEDICAID-PENDING-IND',
-
-CASE
-
-WHEN [RANK1] <> '1' AND [PA-INS-PLAN] IN ('D03','D98') THEN 1
-
-ELSE 0
-
-END AS '2NDRY-MEDICAID-OUT-OF-STATE-IND',
-
-CASE
-
-WHEN [RANK1] <> '1' AND LEFT([PA-INS-PLAN],1) NOT IN ('D','U','A','B','M','H') AND [PA-INS-PLAN] NOT IN ('K01','K20') AND [IM-IND] <> 'JAIL' THEN 1
-
-ELSE 0
-
-END AS '2NDRY-OTHER-INS-IND' ,
-
-CASE
-
-WHEN [RANK1] <> '1' AND LEFT([PA-INS-PLAN],1) IN ('A','B','M') AND [IM-IND] <> 'JAIL' THEN 1
-
-ELSE 0
-
-END AS '2NDRY-MEDICARE-IND',
-
-CASE
-
-WHEN [RANK1] <> '1' AND LEFT([PA-INS-PLAN],1) = 'H' AND [IM-IND] <> 'JAIL' THEN 1
-
-ELSE 0
-
+SELECT [PA-PT-NO-WOSCD]
+, [PA-PT-NO-SCD]
+, [PA-INS-PLAN]
+, [INS-PAY-AMT]
+, CASE
+	WHEN [RANK1] <> '1' 
+	AND LEFT([PA-INS-PLAN],1) IN ('U','D') 
+	AND [PA-INS-PLAN] NOT IN ('D03','D98','D01','D02','D101','D102','D99') 
+		THEN 1
+	WHEN [RANK1] <> '1' 
+	AND LEFT([PA-INS-PLAN],1) NOT IN ('U','D') 
+	AND [IM-IND] ='JAIL' 
+		THEN 1
+		ELSE 0
+  END AS '2NDRY-MEDICAID-ELIGIBLE'
+, CASE
+	WHEN [RANK1] <> '1' AND [pa-ins-plan] IN ('D01','D02','D101','D102','D99') 
+		THEN 1
+		ELSE 0
+  END as '2NDRY-MEDICAID-FFS'
+, CASE
+	WHEN [RANK1] <> '1' AND [PA-INS-PLAN] IN ('K01','K20') 
+		THEN 1
+		ELSE 0
+  END AS '2NDRY-MEDICAID-PENDING-IND'
+, CASE
+	WHEN [RANK1] <> '1' AND [PA-INS-PLAN] IN ('D03','D98') 
+		THEN 1
+		ELSE 0
+  END AS '2NDRY-MEDICAID-OUT-OF-STATE-IND'
+, CASE
+	WHEN [RANK1] <> '1' 
+	AND LEFT([PA-INS-PLAN],1) NOT IN ('D','U','A','B','M','H') 
+	AND [PA-INS-PLAN] NOT IN ('K01','K20') 
+	AND [IM-IND] <> 'JAIL' 
+		THEN 1
+		ELSE 0
+  END AS '2NDRY-OTHER-INS-IND'
+, CASE
+	WHEN [RANK1] <> '1' 
+	AND LEFT([PA-INS-PLAN],1) IN ('A','B','M') 
+	AND [IM-IND] <> 'JAIL' 
+		THEN 1
+		ELSE 0
+  END AS '2NDRY-MEDICARE-IND'
+, CASE
+	WHEN [RANK1] <> '1' 
+	AND LEFT([PA-INS-PLAN],1) = 'H' 
+	AND [IM-IND] <> 'JAIL' 
+		THEN 1
+		ELSE 0
 END AS '2NDRY-SELF-PAY-IND'
-
- 
-
- 
-
- 
 
 FROM [CUSTOMINSURANCE]
 
- 
-
 GO
 
- 
-
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------
 
  
 
