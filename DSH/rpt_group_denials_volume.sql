@@ -13,6 +13,7 @@ Get volume of patients, denials, sum total of denied cash and ratios by reportin
 Tables/Views:
 [dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP
 [DSH].[dbo].[DSH_Denials_Detail] AS Denials
+[dbo].[Encounters_For_DSH] AS DSHENC
 
 Functions:
 None
