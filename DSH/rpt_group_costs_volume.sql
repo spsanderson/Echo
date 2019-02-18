@@ -2,17 +2,17 @@
 Initial Creation by:
 Steven Sanderson, MPH - Manchu Technology Corp Inc.
 
-FILE: rpt_group_denials_volume.sql
+FILE: rpt_group_costs_volume.sql
 
 Input Parameters:
 None
 
 Purpose:
-Get volume of patients, denials, sum total of denied cash and ratios by reporting group
+Get volume of patients, cost, sum total of denied cash and ratios by reporting group
 
 Tables/Views:
 [dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP
-[DSH].[dbo].[DSH_Denials_Detail] AS Denials
+[dbo].[2016_DSH_Costs] AS COSTS
 [dbo].[Encounters_For_DSH] AS DSHENC
 
 Functions:
@@ -43,10 +43,12 @@ SELECT RPTGRP.[REPORTING GROUP],
 -- Encounters_for_DSH gets the base population of patients
 FROM [dbo].[Encounters_For_DSH] AS DSHENC
 -- Get the reporting group for a patient
-LEFT OUTER JOIN [dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP ON DSHENC.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
+LEFT OUTER JOIN [dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP 
+ON DSHENC.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
 	AND DSHENC.[PA-PT-NO-SCD] = RPTGRP.[PA-PT-NO-SCD]
 -- Left join the COSTS TABLE
-LEFT OUTER JOIN [dbo].[2016_DSH_Costs] AS COSTS ON DSHENC.[PA-PT-NO-SCD] = COSTS.[PA-PT-NO-WOSCD]
+LEFT OUTER JOIN [dbo].[2016_DSH_Costs] AS COSTS 
+ON DSHENC.[PA-PT-NO-SCD] = COSTS.[PA-PT-NO-WOSCD]
 	AND DSHENC.[PA-PT-NO-SCD] = COSTS.[PA-PT-NO-SCD]
 
 GROUP BY CAST(DSHENC.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(DSHENC.[PA-PT-NO-SCD] AS VARCHAR),
