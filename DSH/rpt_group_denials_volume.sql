@@ -19,9 +19,9 @@ None
 
 Revision History:
 
-Author	Date	Version	Description
-----	----	----	----
-SSanderson	2019-02-13	v1	Initial Creation
+Author	    Date	    Version	    Description
+----	    ----	    ----	    ----
+SSanderson	2019-02-13	v1	        Initial Creation
 
 ******/
 SELECT RPTGRP.[REPORTING GROUP]
