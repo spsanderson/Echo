@@ -6,9 +6,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-SET NOCOUNT ON;
-SET ANSI_WARNINGS OFF;
-
 /*
 File Name:
 	c_AR_Aged_sp.sql
@@ -38,6 +35,9 @@ Date		Version		Description
 
 CREATE PROCEDURE dbo.c_AR_Aged_sp
 AS
+
+SET NOCOUNT ON;
+SET ANSI_WARNINGS OFF;
 
 BEGIN
 
