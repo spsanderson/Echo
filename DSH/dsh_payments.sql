@@ -43,7 +43,7 @@ INSERT INTO [2016_DSH_Payments] (
 	[REPORTING GROUP],
 	[TOT-PAYMENTS]
 	)
-SELECT TOP 1 a.[pa-pt-no-woscd],
+SELECT a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1] AS 'PA-PT-NO-SCD',
 	CAST(a.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(a.[pa-pt-no-scd-1] AS VARCHAR) AS 'PT-NO',
 	B.[PA-UNIT-NO],
