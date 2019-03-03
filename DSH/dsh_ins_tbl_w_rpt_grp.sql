@@ -705,5 +705,5 @@ GO
 SELECT *
 FROM [DSH_INSURANCE_TABLE_W_REPORT_GROUPS]
 --where --([REPORTING GROUP] <>'' and [primary-type] <>'other primary payer')
---[pa-pt-no-woscd] IN ('1009790855','1009994604','1009689305')
+--[pa-pt-no-woscd] IN ('')
 ORDER BY 'primary-type'
