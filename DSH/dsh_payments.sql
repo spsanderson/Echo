@@ -158,7 +158,7 @@ SELECT a.[pa-pt-no-woscd],
 	CAST(A.[PA-DTL-SVC-CD-WOSCD] AS VARCHAR) + CAST(A.[PA-DTL-SVC-CD-SCD] AS VARCHAR) AS 'PA-DTL-SVC-CD',
 	A.[PA-DTL-CDM-DESCRIPTION],
 	c.[PA-UNIT-STS],
-    RPTGRP.[REPORTING GROUP,]
+    RPTGRP.[REPORTING GROUP],
 	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-PAYMENTS'
 FROM [Echo_Archive].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
@@ -200,7 +200,7 @@ SELECT a.[pa-pt-no-woscd],
 	c.[PA-UNIT-STS],
 	D.[REPORTING GROUP],
 	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-PAYMENTS'
-    
+
 FROM [Echo_ACTIVE].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND b.[pa-unit-no] IS NULL --DATEADD(DAY,-(DAY(DATEADD(MONTH, 1,a.[pa-dtl-date]))),DATEADD(MONTH,1,a.[pa-dtl-date]))
