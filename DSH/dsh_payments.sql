@@ -55,8 +55,9 @@ SELECT a.[pa-pt-no-woscd],
 	CAST(A.[PA-DTL-SVC-CD-WOSCD] AS VARCHAR) + CAST(A.[PA-DTL-SVC-CD-SCD] AS VARCHAR) AS 'PA-DTL-SVC-CD',
 	A.[PA-DTL-CDM-DESCRIPTION],
 	c.[PA-UNIT-STS],
-	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-PAYMENTS',
-	RPTGRP.[REPORTING GROUP]
+    RPTGRP.[REPORTING GROUP],
+	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-PAYMENTS'
+	
 FROM [Echo_Archive].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND A.[PA-DTL-DATE] >= B.[START_UNIT_DATE]
@@ -67,7 +68,7 @@ LEFT JOIN DSH.DBO.DSH_INSURANCE_TABLE_W_REPORT_GROUPS AS RPTGRP
 ON A.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
 	AND A.[PA-PT-NO-SCD-1] = RPTGRP.[PA-PT-NO-SCD]
 WHERE a.[pa-dtl-type-ind] IN ('1', '2')
-AND  a.[pa-pt-no-woscd] = '1008126781'
+--AND  a.[pa-pt-no-woscd] = '1008126781'
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1],
@@ -97,13 +98,18 @@ SELECT a.[pa-pt-no-woscd],
 	CAST(A.[PA-DTL-SVC-CD-WOSCD] AS VARCHAR) + CAST(A.[PA-DTL-SVC-CD-SCD] AS VARCHAR) AS 'PA-DTL-SVC-CD',
 	A.[PA-DTL-CDM-DESCRIPTION],
 	c.[PA-UNIT-STS],
+    RPTGRP.[REPORTING GROUP],
 	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-PAYMENTS'
+
 FROM [Echo_ACTIVE].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND A.[PA-DTL-DATE] >= B.[START_UNIT_DATE]
 	AND A.[PA-DTL-DATE] <= B.[END_UNIT_DATE]
 	AND a.[pa-ctl-paa-xfer-date] = b.[pa-ctl-paa-xfer-date] --AND b.[pa-unit-date] = a.[pa-dtl-unit-date]--DATEADD(DAY,-(DAY(DATEADD(MONTH, 1,a.[pa-dtl-date]))),DATEADD(MONTH,1,a.[pa-dtl-date]))
 LEFT JOIN [Echo_ACTIVE].dbo.[PatientDemographics] C ON A.[PA-PT-NO-WOSCD] = C.[PA-PT-NO-WOSCD]
+LEFT JOIN DSH.DBO.DSH_INSURANCE_TABLE_W_REPORT_GROUPS AS RPTGRP
+ON A.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
+	AND A.[PA-PT-NO-SCD-1] = RPTGRP.[PA-PT-NO-SCD]
 WHERE a.[pa-dtl-type-ind] IN ('1', '2')
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
@@ -117,7 +123,8 @@ GROUP BY a.[pa-pt-no-woscd],
 	A.[PA-DTL-SVC-CD-WOSCD],
 	A.[PA-DTL-SVC-CD-SCD],
 	A.[PA-DTL-CDM-DESCRIPTION],
-	c.[PA-UNIT-STS]
+	c.[PA-UNIT-STS],
+    RPTGRP.[REPORTING GROUP]
 
 UNION
 
@@ -151,12 +158,16 @@ SELECT a.[pa-pt-no-woscd],
 	CAST(A.[PA-DTL-SVC-CD-WOSCD] AS VARCHAR) + CAST(A.[PA-DTL-SVC-CD-SCD] AS VARCHAR) AS 'PA-DTL-SVC-CD',
 	A.[PA-DTL-CDM-DESCRIPTION],
 	c.[PA-UNIT-STS],
+    RPTGRP.[REPORTING GROUP,]
 	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-PAYMENTS'
 FROM [Echo_Archive].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND b.[pa-unit-no] IS NULL
 	AND a.[pa-ctl-paa-xfer-date] = b.[pa-ctl-paa-xfer-date] --DATEADD(DAY,-(DAY(DATEADD(MONTH, 1,a.[pa-dtl-date]))),DATEADD(MONTH,1,a.[pa-dtl-date]))
 LEFT JOIN [Echo_Archive].dbo.[PatientDemographics] C ON A.[PA-PT-NO-WOSCD] = C.[PA-PT-NO-WOSCD]
+LEFT JOIN DSH.DBO.DSH_INSURANCE_TABLE_W_REPORT_GROUPS AS RPTGRP
+ON A.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
+	AND A.[PA-PT-NO-SCD-1] = RPTGRP.[PA-PT-NO-SCD]
 WHERE a.[pa-dtl-type-ind] IN ('1', '2')
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
@@ -170,7 +181,8 @@ GROUP BY a.[pa-pt-no-woscd],
 	A.[PA-DTL-SVC-CD-WOSCD],
 	A.[PA-DTL-SVC-CD-SCD],
 	A.[PA-DTL-CDM-DESCRIPTION],
-	c.[PA-UNIT-STS]
+	c.[PA-UNIT-STS],
+    RPTGRP.[REPORTING GROUP]
 
 UNION
 
@@ -188,6 +200,7 @@ SELECT a.[pa-pt-no-woscd],
 	c.[PA-UNIT-STS],
 	D.[REPORTING GROUP],
 	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-PAYMENTS'
+    
 FROM [Echo_ACTIVE].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND b.[pa-unit-no] IS NULL --DATEADD(DAY,-(DAY(DATEADD(MONTH, 1,a.[pa-dtl-date]))),DATEADD(MONTH,1,a.[pa-dtl-date]))
