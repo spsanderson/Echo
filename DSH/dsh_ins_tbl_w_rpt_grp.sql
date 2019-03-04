@@ -669,6 +669,11 @@ GO
 		j.[2NDRY-MEDICARE-IND],
 		j.[2NDRY-SELF-PAY-IND],
 		J.[2NDRY-MEDICAID-MANAGED],
+		CASE
+			WHEN PMTS.[PA-DTL-SVC-CD] = '108084'
+				THEN 1
+				ELSE 0
+		END AS [MEDICAID_PMT_IP_OP],
 		J.[TOT-INS-PAYMTS],
 		k.[im-ind]
 	INTO [DSH_INSURANCE_TABLE_W_REPORT_GROUPS]
@@ -691,6 +696,9 @@ GO
 		AND i.[rank1] = '1'
 	LEFT OUTER JOIN [Secondary_Ins_Indicators_Summary] j ON a.[pa-pt-no-woscd] = j.[pa-pt-no-woscd]
 	LEFT OUTER JOIN [IM_Patients] k ON a.[pa-pt-no-woscd] = k.[pa-pt-no-woscd]
+	LEFT OUTER JOIN [dbo].[2016_DSH_Payments] AS PMTS
+	ON A.[PA-PT-NO-WOSCD] = PMTS.[PA-PT-NO-WOSCD]
+		AND A.[PA-PT-NO-SCD] = PMTS.[PA-PT-NO-SCD]
 		--WHERE [INDICATOR] = 'PRIMARY SELF PAY' AND J.[2NDRY-MEDICAID-ELIGIBLE]>'0'
 		--AND (J.[2NDRY-MEDICAID-ELIGIBLE]>'0' OR J.[2NDRY-MEDICAID-OUT-OF-STATE-IND]> '0' OR J.[2NDRY-MEDICAID-PENDING-IND]>'0')
 		----WHERE [indicator] = 'PRIMARY SELF PAY' --AND (c.[pa-ins-plan] in ('d03','d98') or d.[pa-ins-plan] in ('d03','d98')))--(j.[MEDICAID-ELIGIBLE]>'0' OR j.[MEDICAID-OUT-OF-STATE-NON-PRIME-IND]>'0' or j.[MEDICAID-PENDING-NON-PRIME-IND]>'0')
