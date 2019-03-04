@@ -673,10 +673,10 @@ GO
 			WHEN PMTS.[PA-DTL-SVC-CD] = '108084'
 				THEN 1
 				ELSE 0
-		END AS [MEDICAID_PMT_IP_OP],
+		END AS [MEDICAID-PMT-IP-OP],
 		J.[TOT-INS-PAYMTS],
 		k.[im-ind]
-	INTO [DSH_INSURANCE_TABLE_W_REPORT_GROUPS]
+	INTO #DSH_INSURANCE_TABLE_W_REPORT_GROUPS_TEMP
 	FROM [Encounters_For_DSH] a
 	LEFT OUTER JOIN [CUSTOMINSURANCE] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 		AND b.[rank1] = '1'
@@ -705,6 +705,57 @@ GO
 		--and (j.[2NDRY-MEDICAID-ELIGIBLE]>'0' OR j.[2NDRY-MEDICAID-PENDING-IND]>'0' OR j.[2NDRY-MEDICAID-OUT-OF-STATE-IND]>'0' OR j.[2NDRY-MEDICAID-OUT-OF-STATE-PENDING-IND]>'0' OR j.[2NDRY-OTHER-INS-IND] > '0' OR j.[2NDRY-MEDICARE-IND] >'0')
 		--k.[im-ind]
 		--WHERE K.[IM-IND] IS NOT NULL
+	;
+
+	SELECT [PA-PT-NO-WOSCD]
+      ,[PA-PT-NO-SCD]
+      ,[PA-CTL-PAA-XFER-DATE]
+      ,[pa-unit-no]
+      ,[pa-med-rec-no]
+      ,[pa-pt-name]
+      ,[admit_date]
+      ,[dsch_date]
+      ,[pa-unit-date]
+      ,[pa-acct-type]
+      ,[COB1]
+      ,[INS1]
+      ,[COB2]
+      ,[INS2]
+      ,[COB3]
+      ,[INS3]
+      ,[COB4]
+      ,[INS4]
+      ,[COB5]
+      ,[INS5]
+      ,[COB6]
+      ,[INS6]
+      ,[COB7]
+      ,[INS7]
+      ,[REPORTING GROUP]
+      ,[TEST-PRIMARY-MEDICAID]
+      ,[TEST-MEDICIAD-FFS-DUAL-ELIGIBLE]
+      ,[TEST-PRIMARY-MEDICAID-MANAGED-CARE]
+      ,[TEST-MEDICAID-MGD-CARE-DUAL-ELIG]
+      ,[TEST-PRIMARY-SELF-PAY]
+      ,[TEST-PRIMARY-OUT-OF-STATE-MEDICAID]
+      ,[TEST-DUAL-ELIG-OUT-OF-STATE-MEDICAID]
+      ,[TEST-MEDICAID-FFS-DUAL-ELIG-2]
+      ,[TEST-MEDICAID-MGD-DUAL-ELIG-2]
+      ,[TEST-DUAL-ELIG-OUT-OF-STATE-MCAID-2]
+      ,[TEST-PRIMARY-SELF-PAY-2]
+      ,[PRIMARY-TYPE]
+      ,[2NDRY-MEDICAID-ELIGIBLE]
+      ,[2NDRY-MEDICAID-PENDING-IND]
+      ,[2NDRY-MEDICAID-OUT-OF-STATE-IND]
+      ,[2NDRY-OTHER-INS-IND]
+      ,[2NDRY-MEDICARE-IND]
+      ,[2NDRY-SELF-PAY-IND]
+      ,[2NDRY-MEDICAID-MANAGED]
+      ,[MEDICAID-PMT-IP-OP]
+      ,[TOT-INS-PAYMTS]
+      ,[im-ind]
+	INTO [DSH_INSURANCE_TABLE_W_REPORT_GROUPS]
+	FROM #DSH_INSURANCE_TABLE_W_REPORT_GROUPS_TEMP AS A
 GO
 
 
