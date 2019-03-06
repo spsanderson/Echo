@@ -672,6 +672,9 @@ GO
 	LEFT OUTER JOIN [IM_Patients] k ON a.[pa-pt-no-woscd] = k.[pa-pt-no-woscd]
 	LEFT OUTER JOIN [dbo].[2016_DSH_Payments] AS PMTS ON A.[PA-PT-NO-WOSCD] = PMTS.[PA-PT-NO-WOSCD]
 		AND A.[PA-PT-NO-SCD] = PMTS.[PA-PT-NO-SCD]
+		-- EDIT SPS 3-5-2019 --
+		AND A.[pa-unit-no] = PMTS.[PA-UNIT-NO]
+		-- END EDIT -----------
 		--WHERE [INDICATOR] = 'PRIMARY SELF PAY' AND J.[2NDRY-MEDICAID-ELIGIBLE]>'0'
 		--AND (J.[2NDRY-MEDICAID-ELIGIBLE]>'0' OR J.[2NDRY-MEDICAID-OUT-OF-STATE-IND]> '0' OR J.[2NDRY-MEDICAID-PENDING-IND]>'0')
 		----WHERE [indicator] = 'PRIMARY SELF PAY' --AND (c.[pa-ins-plan] in ('d03','d98') or d.[pa-ins-plan] in ('d03','d98')))--(j.[MEDICAID-ELIGIBLE]>'0' OR j.[MEDICAID-OUT-OF-STATE-NON-PRIME-IND]>'0' or j.[MEDICAID-PENDING-NON-PRIME-IND]>'0')
@@ -794,3 +797,5 @@ FROM [DSH_INSURANCE_TABLE_W_REPORT_GROUPS]
 --where --([REPORTING GROUP] <>'' and [primary-type] <>'other primary payer')
 --[pa-pt-no-woscd] IN ('')
 ORDER BY 'primary-type'
+
+;
