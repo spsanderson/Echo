@@ -85,6 +85,10 @@ LEFT JOIN [Echo_Archive].dbo.[PatientDemographics] C ON A.[PA-PT-NO-WOSCD] = C.[
 LEFT JOIN [DSH].[dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP
 ON A.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
 	AND A.[PA-PT-NO-SCD-1] = RPTGRP.[PA-PT-NO-SCD]
+	-- EDIT SPS 3-5-2019 -----
+	AND B.[pa-unit-no] = RPTGRP.[pa-unit-no]
+	AND B.[pa-unit-date] = RPTGRP.[pa-unit-date]
+	-- END EDIT --------------
 WHERE a.[pa-dtl-type-ind] IN ('7', '8', 'A', 'B')
 --AND  a.[pa-pt-no-woscd] = '1010313424'
 --AND a.[pa-pt-no-woscd] = '1010586387'
@@ -137,6 +141,10 @@ LEFT JOIN [Echo_ACTIVE].dbo.[PatientDemographics] C ON A.[PA-PT-NO-WOSCD] = C.[P
 LEFT JOIN [DSH].[dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP
 ON A.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
 	AND A.[PA-PT-NO-SCD-1] = RPTGRP.[PA-PT-NO-SCD]
+	-- EDIT SPS 3-5-2019 -----
+	AND B.[pa-unit-no] = RPTGRP.[pa-unit-no]
+	AND B.[pa-unit-date] = RPTGRP.[pa-unit-date]
+	-- END EDIT --------------
 WHERE a.[pa-dtl-type-ind] IN ('7', '8', 'A', 'B')
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
@@ -205,6 +213,10 @@ LEFT JOIN [Echo_Archive].dbo.[PatientDemographics] C ON A.[PA-PT-NO-WOSCD] = C.[
 LEFT JOIN [DSH].[dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP
 ON A.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
 	AND A.[PA-PT-NO-SCD-1] = RPTGRP.[PA-PT-NO-SCD]
+	-- EDIT SPS 3-5-2019 -----
+	AND B.[pa-unit-no] = RPTGRP.[pa-unit-no]
+	AND B.[pa-unit-date] = RPTGRP.[pa-unit-date]
+	-- END EDIT --------------
 WHERE a.[pa-dtl-type-ind] IN ('7', '8', 'A', 'B')
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
@@ -254,6 +266,10 @@ LEFT JOIN [Echo_ACTIVE].dbo.[PatientDemographics] C ON A.[PA-PT-NO-WOSCD] = C.[P
 LEFT JOIN [DSH].[dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP
 ON A.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
 	AND A.[PA-PT-NO-SCD-1] = RPTGRP.[PA-PT-NO-SCD]
+	-- EDIT SPS 3-5-2019 -----
+	AND B.[pa-unit-no] = RPTGRP.[pa-unit-no]
+	AND B.[pa-unit-date] = RPTGRP.[pa-unit-date]
+	-- END EDIT --------------
 WHERE a.[pa-dtl-type-ind] IN ('7', '8', 'A', 'B')
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
@@ -302,6 +318,10 @@ LEFT OUTER JOIN [Echo_Archive].dbo.[PatientDemographics] b ON a.[PT_Number] = CA
 LEFT OUTER JOIN [Echo_Active].dbo.[PatientDemographics] c ON a.[PT_Number] = CAST(c.[pa-pt-no-woscd] AS VARCHAR) + CAST(c.[pa-pt-no-scd-1] AS VARCHAR)
 LEFT OUTER JOIN [DSH].[dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP
 ON A.[PT_Number] = CAST(RPTGRP.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(RPTGRP.[PA-PT-NO-SCD] AS VARCHAR)
+	-- EDIT SPS 3-5-2019 -----
+	AND a.[pa-unit-no] = RPTGRP.[pa-unit-no]
+	--AND a.[pa-unit-date] = RPTGRP.[pa-unit-date]
+	-- END EDIT --------------
 WHERE len([pt_number]) >= 1 --- Had to add this after I adjusted BFW files to include [pa-dtl-type-ind] which I need for identifying R&B charges.  Some how an extra line under pt_number was added to 2016_ALL_BFW_Chgs and was giving me errors when running this query 
 GROUP BY a.[PT_Number],
 	a.[PA-DTL-SVC-CD],
