@@ -60,8 +60,11 @@ SELECT a.[pa-pt-no-woscd],
 	
 FROM [Echo_Archive].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
-	AND A.[PA-DTL-DATE] >= B.[START_UNIT_DATE]
-	AND A.[PA-DTL-DATE] <= B.[END_UNIT_DATE]
+	AND A.[PA-DTL-UNIT-DATE] = B.[pa-unit-date]
+	-- EDIT 3-6-2019
+	--AND A.[PA-DTL-DATE] >= B.[START_UNIT_DATE]
+	--AND A.[PA-DTL-DATE] <= B.[END_UNIT_DATE]
+	-- END EDIT
 	AND a.[pa-ctl-paa-xfer-date] = b.[pa-ctl-paa-xfer-date] --AND b.[pa-unit-date] = a.[pa-dtl-unit-date]--DATEADD(DAY,-(DAY(DATEADD(MONTH, 1,a.[pa-dtl-date]))),DATEADD(MONTH,1,a.[pa-dtl-date]))
 LEFT JOIN [Echo_Archive].dbo.[PatientDemographics] C ON A.[PA-PT-NO-WOSCD] = C.[PA-PT-NO-WOSCD]
 LEFT JOIN DSH.DBO.DSH_INSURANCE_TABLE_W_REPORT_GROUPS AS RPTGRP
@@ -103,8 +106,11 @@ SELECT a.[pa-pt-no-woscd],
 
 FROM [Echo_ACTIVE].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
-	AND A.[PA-DTL-DATE] >= B.[START_UNIT_DATE]
-	AND A.[PA-DTL-DATE] <= B.[END_UNIT_DATE]
+	AND A.[PA-DTL-UNIT-DATE] = B.[pa-unit-date]
+	-- EDIT 3-6-2019
+	--AND A.[PA-DTL-DATE] >= B.[START_UNIT_DATE]
+	--AND A.[PA-DTL-DATE] <= B.[END_UNIT_DATE]
+	-- END EDIT
 	AND a.[pa-ctl-paa-xfer-date] = b.[pa-ctl-paa-xfer-date] --AND b.[pa-unit-date] = a.[pa-dtl-unit-date]--DATEADD(DAY,-(DAY(DATEADD(MONTH, 1,a.[pa-dtl-date]))),DATEADD(MONTH,1,a.[pa-dtl-date]))
 LEFT JOIN [Echo_ACTIVE].dbo.[PatientDemographics] C ON A.[PA-PT-NO-WOSCD] = C.[PA-PT-NO-WOSCD]
 LEFT JOIN DSH.DBO.DSH_INSURANCE_TABLE_W_REPORT_GROUPS AS RPTGRP
@@ -151,7 +157,10 @@ SELECT a.[pa-pt-no-woscd],
 	CAST(a.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(a.[pa-pt-no-scd-1] AS VARCHAR) AS 'PT-NO',
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date],
-	A.[PA-DTL-UNIT-DATE],
+	-- EDIT 3-6-2019
+	--A.[PA-DTL-UNIT-DATE],
+	'',
+	-- END EDIT
 	B.[PTACCT_TYPE] AS 'TYPE',
 	A.[PA-DTL-TYPE-IND],
 	A.[PA-DTL-GL-NO],
@@ -174,7 +183,7 @@ GROUP BY a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date],
-	A.[PA-DTL-UNIT-DATE],
+	--A.[PA-DTL-UNIT-DATE],
 	B.[PTACCT_TYPE],
 	A.[PA-DTL-TYPE-IND],
 	A.[PA-DTL-GL-NO],
@@ -191,7 +200,11 @@ SELECT a.[pa-pt-no-woscd],
 	CAST(a.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(a.[pa-pt-no-scd-1] AS VARCHAR) AS 'PT-NO',
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date],
-	A.[PA-DTL-UNIT-DATE],
+	-- EDIT 3-6-2019
+	--A.[PA-DTL-UNIT-DATE],
+	'',
+	-- END EDIT
+	--A.[PA-DTL-UNIT-DATE],
 	B.[PTACCT_TYPE] AS 'TYPE',
 	A.[PA-DTL-TYPE-IND],
 	A.[PA-DTL-GL-NO],
@@ -214,7 +227,7 @@ GROUP BY a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date],
-	A.[PA-DTL-UNIT-DATE],
+	--A.[PA-DTL-UNIT-DATE],
 	B.[PTACCT_TYPE],
 	A.[PA-DTL-TYPE-IND],
 	A.[PA-DTL-GL-NO],
