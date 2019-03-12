@@ -1,0 +1,65 @@
+USE [DSH]
+GO
+
+/****** ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+DROP TABLE IF EXISTS [2016_ALL_BFW_CHGS] 
+GO
+
+	CREATE TABLE [2016_ALL_BFW_CHGS] (
+		[PT_Number] VARCHAR(50) NOT NULL,
+		[ADM_DT] DATETIME,
+		[DSCH_DT] DATETIME,
+		--[QTY]  (50) not null,
+		[QTY] DECIMAL,
+		--[CHG_AMT] varchar (50) not null,
+		[CHG_AMT] MONEY,
+		[PA-DTL-TYPE-IND] VARCHAR(50) NOT NULL,
+		[PA-DTL-SVC-CD] VARCHAR(50) NOT NULL,
+		[PA-DTL-CDM-DESCRIPTION] VARCHAR(50) NOT NULL,
+		[pa-unit-no] VARCHAR(50) NULL,
+		[unit-date] VARCHAR(50) NULL
+		);
+
+INSERT INTO [2016_ALL_BFW_CHGS] (
+	[PT_Number],
+	[ADM_DT],
+	[DSCH_DT],
+	[QTY],
+	[CHG_AMT],
+	[PA-DTL-TYPE-IND],
+	[PA-DTL-SVC-CD],
+	[PA-DTL-CDM-DESCRIPTION],
+	[pa-unit-no],
+	[unit-date]
+	)
+SELECT [PT_Number],
+	[ADM_DT],
+	[DSCH_DT],
+	[QTY],
+	[CHG_AMT],
+	[PA-DTL-TYPE-IND],
+	[P_File] AS 'PA-DTL-SVC-CD',
+	[GENERAL_DESCRIPTION] AS 'PA-DTL-CDM-DESCRIPTION',
+	[pa-unit-no],
+	[unit-date]
+FROM [UHMC-SQL-V16D1].[DSH].[dbo].[2016_BFW_CHGS_Non_Super_Accounts]
+
+UNION ALL
+
+SELECT [PT_NUMBER],
+	[ADM_DT],
+	[DSCH_DT],
+	[QTY],
+	[CHG_AMT],
+	[PA-DTL-TYPE-IND],
+	[P_File] AS 'PA-DTL-SVC-CD',
+	[GENERAL_DESCRIPTION] AS 'PA-DTL-CDM-DESCRIPTION',
+	[pa-unit-no],
+	[unit-date]
+FROM [UHMC-SQL-V16D1].[DSH].[dbo].[2016_BFW_CHGS_Super_Accounts]
