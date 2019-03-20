@@ -11,8 +11,8 @@ WHERE (
 			)
 		);
 
-SELECT TOP 1 *
-FROM #TEMPA;
+--SELECT TOP 1 *
+--FROM #TEMPA;
 
 -----
 SELECT [PA-PT-NO-WOSCD],
