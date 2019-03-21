@@ -19,7 +19,8 @@ GO
 		CAST(a.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(a.[PA-PT-NO-SCD] AS VARCHAR) AS 'PT-NO',
 		A.[PA-UNIT-NO],
 		A.[unit-date] AS 'UNIT-DATE',
-		B.[PTACCT_TYPE] AS 'TYPE',
+		A.[TYPE],
+		--B.[PTACCT_TYPE] AS 'TYPE',
 		A.[PA-DTL-TYPE-IND],
 		CASE 
 			-- when [PA-DTL-TYPE-IND] ='1' then 'Payments'
@@ -63,8 +64,9 @@ GO
 				THEN F.[R&B PER DIEM 2016]
 			ELSE 0
 			END AS 'PER DIEM',
-		E.[Classification_for_2016_DSH],
-		b.[PA-MED-REC-NO],
+		E.[R&B_Classification_for_2016_DSH],
+		A.[PA-MED-REC-NO],
+		--b.[PA-MED-REC-NO],
 		Sum(A.[TOT-CHG-QTY]) AS 'SUM TOT-CHG-QTY',
 		SUM(A.[TOT-CHARGES]) AS 'SUM OF TOT CHG',
 		SUM(A.[TOT-PROF-FEES]) AS 'SUM OF TOT PROF FEES',
@@ -72,7 +74,7 @@ GO
 	--SUM(H.[TOT-PAYMENTS]) AS 'SUM OF TOT PYMTS' (payments will be duplicated by encounter if pulled here)
 	INTO [temp_DSH_Costs]
 	FROM [dbo].[2016_DSH_Charges] a
-	LEFT JOIN [dbo].[Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
+	--LEFT JOIN [dbo].[Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd] AND A.[PA-UNIT-NO] = B.[pa-unit-no]
 	LEFT JOIN [dbo].[Copy_of_CDM_18DEC_for_DSH] g ON A.[PA-DTL-SVC-CD] = G.[Service_Code]
 	LEFT JOIN [dbo].[2017_GL_Key_Table] d ON A.[PA-DTL-GL-NO] = d.[GLKey]
 	LEFT JOIN [dbo].[2017_ICR_Rollup_with_Room_and_Board_Classifications_for_DSH] E ON D.[CrAcctUnit] = E.[Cost_Center_wExtra_Zeros]
@@ -82,7 +84,8 @@ GO
 		a.[PA-PT-NO-SCD],
 		A.[PA-UNIT-NO],
 		a.[unit-date],
-		B.[PTACCT_TYPE],
+		A.[TYPE],
+		--B.[PTACCT_TYPE],
 		A.[PA-DTL-TYPE-IND],
 		A.[PA-DTL-GL-NO],
 		A.[PA-DTL-REV-CD],
@@ -92,8 +95,9 @@ GO
 		G.[CPT_H],
 		d.[CrAcctUnit],
 		E.[ICR],
-		E.[Classification_for_2016_DSH],
-		b.[pa-med-rec-no],
+		E.[R&B_Classification_for_2016_DSH],
+		A.[PA-MED-REC-NO],
+		--b.[pa-med-rec-no],
 		F.[R&B PER DIEM 2016],
 		G.[Rev_CD_(A) ];
 
@@ -119,7 +123,7 @@ SELECT [pa-pt-no-woscd],
 	[ICR],
 	[PER DIEM],
 	[RCC],
-	[Classification_for_2016_DSH],
+	[R&B_Classification_for_2016_DSH],
 	[PA-MED-REC-NO],
 	[SUM TOT-CHG-QTY],
 	[SUM OF TOT CHG],
@@ -134,7 +138,7 @@ SELECT [pa-pt-no-woscd],
 		END AS 'RCC_For_DSH'
 INTO temp_DSH_Costs2
 FROM [DSH].[dbo].[temp_DSH_Costs] a
-LEFT JOIN [dbo].[2016_RCCs_for_DSH] c ON a.[Adjusted Rev Code] = c.[SORT_BY_REV_CODE];
+LEFT JOIN [dbo].[2016_RCCs_for_DSH] c ON a.[Adjusted Rev Code] = c.[REV CODE];
 
 /*Finalize the DSH Cost Table*/
 SELECT COSTS.[pa-pt-no-woscd],
@@ -168,7 +172,7 @@ SELECT COSTS.[pa-pt-no-woscd],
 				THEN COSTS.[RCC_For_DSH] * COSTS.[Sum_of_Chargesand_Prof_Fees]
 			ELSE COSTS.[PER DIEM] * COSTS.[SUM TOT-CHG-QTY]
 			END, 2) AS 'Cost',
-	COSTS.[Classification_for_2016_DSH],
+	COSTS.[R&B_Classification_for_2016_DSH],
 	COSTS.[PA-MED-REC-NO],
 	COSTS.[SUM TOT-CHG-QTY],
 	RPTGRP.[REPORTING GROUP]
@@ -177,3 +181,5 @@ FROM [DSH].[dbo].[temp_DSH_Costs2] AS COSTS
 LEFT OUTER JOIN DBO.[DSH_INSURANCE_TABLE_W_REPORT_GROUPS] AS RPTGRP
 ON COSTS.[PA-PT-NO-WOSCD] = RPTGRP.[PA-PT-NO-WOSCD]
 	AND COSTS.[PA-PT-NO-SCD] = RPTGRP.[PA-PT-NO-SCD]
+	AND COSTS.[PA-UNIT-NO]=RPTGRP.[pa-unit-no]
+	AND COSTS.[UNIT-DATE]=RPTGRP.[pa-unit-date]
