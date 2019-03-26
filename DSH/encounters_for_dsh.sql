@@ -1,8 +1,6 @@
 USE [DSH]
 
-DROP TABLE
-
-IF EXISTS dbo.[#DSH_Units] GO
+DROP TABLE IF EXISTS dbo.[#DSH_Units] GO
 	CREATE TABLE [#DSH_Units] (
 		[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
 		[PA-PT-NO-SCD] CHAR(1) NOT NULL,
@@ -49,9 +47,7 @@ WHERE (
 		)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-DROP TABLE
-
-IF EXISTS dbo.[#DSH_Units_W_Rank] GO
+DROP TABLE IF EXISTS dbo.[#DSH_Units_W_Rank] GO
 	CREATE TABLE [#DSH_Units_W_Rank] (
 		[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
 		[PA-PT-NO-SCD] CHAR(1) NOT NULL,
@@ -79,9 +75,7 @@ FROM dbo.[#DSH_Units]
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 USE [DSH]
 
-DROP TABLE
-
-IF EXISTS [DSH_Unit_Partitions] GO
+DROP TABLE IF EXISTS [DSH_Unit_Partitions] GO
 	SELECT a.[pa-pt-no-woscd],
 		a.[pa-pt-no-scd],
 		isnull(DATEADD(DAY, 1, b.[unit-date]), DATEADD(DAY, 1, EOMONTH(a.[unit-date], - 1))) AS 'Start_Unit_Date',
@@ -94,9 +88,7 @@ IF EXISTS [DSH_Unit_Partitions] GO
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 /*Create Table of 2016 Encounters for DSH Reporting*/
-DROP TABLE
-
-IF EXISTS Encounters_For_DSH GO
+DROP TABLE IF EXISTS Encounters_For_DSH GO
 	/*Add Table*/
 	CREATE TABLE [Encounters_For_DSH] (
 		[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
