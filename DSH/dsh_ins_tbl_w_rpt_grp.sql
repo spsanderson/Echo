@@ -10,7 +10,6 @@ GO
 ----------------------------------------------------------------------------------------------------------------------------------------------------
 /*Create Table For IM Patients*/
 DROP TABLE IF EXISTS IM_Patients
-
 	CREATE TABLE [IM_Patients] (
 		[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
 		[PA-PT-NO-SCD] CHAR(1) NOT NULL,
@@ -62,7 +61,6 @@ GO
 --SELECT * FROM #IM_Patients
 ----------------------------------------------------------------------------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DISTINCT_ENCOUNTERS_FOR_DSH
-
 	CREATE TABLE DISTINCT_ENCOUNTERS_FOR_DSH (
 		[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
 		[PA-PT-NO-SCD] CHAR(1) NOT NULL
@@ -163,7 +161,9 @@ GO
 --WHERE A.[PA-DELETE-DATE] IS NULL
 ---------------------------------------------------------------------------------------------------------------------------------------------------
 /*Create Temp Table of Primary Payer Designations*/
-DROP TABLE IF EXISTS [Primary_Ins_Type]
+DROP TABLE
+
+IF EXISTS [Primary_Ins_Type]
 	--GO
 	-- Add new table
 	CREATE TABLE [Primary_Ins_Type] (
@@ -221,8 +221,9 @@ GO
 --select *  FROM DBO.PRIMARY_INS_TYPE
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 /*Create Temp Table of Secondary Indicators At The Plan Code Level*/
-DROP TABLE IF EXISTS [Secondary_Ins_Indicators_Detail] 
-GO
+DROP TABLE
+
+IF EXISTS [Secondary_Ins_Indicators_Detail] GO
 	-- Add new table
 	CREATE TABLE [Secondary_Ins_Indicators_Detail] (
 		[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
@@ -322,8 +323,9 @@ GO
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 /*Create Secondary Indicator Summary At Encounter Level*/
-DROP TABLE IF EXISTS [Secondary_Ins_Indicators_Summary] 
-GO
+DROP TABLE
+
+IF EXISTS [Secondary_Ins_Indicators_Summary] GO
 	--Add New Table
 	CREATE TABLE [Secondary_Ins_Indicators_Summary] (
 		[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
@@ -368,53 +370,81 @@ GROUP BY B.[pa-pt-no-woscd],
 	B.[pa-pt-no-scd]
 GO
 
--- MEDICAID PMT INDICATOR 108084 TABLE --------------------------------
-DROP TABLE IF EXISTS [DSH].[dbo].[2016_DSH_MEDICAID_PMT_INDICATOR]
-GO
+-- DENIAL EXCLUDED ENCOUNTER TABLE-------------------------------------------------------------------------------------------------------------------------------------------
+DROP TABLE
 
-CREATE TABLE [DSH].[dbo].[2016_DSH_MEDICAID_PMT_INDICATOR] (
-	 [PA-PT-NO-WOSCD] VARCHAR(50) NOT NULL
-    , [PA-PT-NO-SCD] CHAR(1) NOT NULL
-    , [PT-NO] VARCHAR(51) NOT NULL
-	, [PA-UNIT-NO] VARCHAR(50) NULL
-	, [PA-DTL-UNIT-DATE] VARCHAR(50) NULL
-	, [MEDICAID-PM-IP-OP-IND] INT NULL
-    , [TOTAL-PAYMENTS] MONEY
-)
-;
+IF EXISTS [DSH].[dbo].[2016_DSH_ENCOUNTERS_W_SELECTED_DENIALS] GO
+	CREATE TABLE [DSH].[dbo].[2016_DSH_ENCOUNTERS_W_SELECTED_DENIALS] (
+		[PA-PT-NO-WOSCD] VARCHAR(50) NOT NULL,
+		[PA-PT-NO-SCD] CHAR(1) NOT NULL,
+		[PT-NO] VARCHAR(51) NOT NULL,
+		[PA-UNIT-NO] VARCHAR(50) NULL,
+		[PA-DTL-UNIT-DATE] VARCHAR(50) NULL,
+		[DENIAL-IND] INT NULL,
+		[TOTAL-DENIALS] MONEY
+		);
+
+INSERT INTO [DSH].[dbo].[2016_DSH_ENCOUNTERS_W_SELECTED_DENIALS]
+SELECT [PA-PT-NO-WOSCD],
+	[PA-PT-NO-SCD],
+	[PT-NO],
+	[PA-UNIT-NO],
+	CASE 
+		WHEN [PA-UNIT-NO] IS NULL
+			THEN NULL
+		ELSE CAST([PA-DTL-UNIT-DATE] AS DATE)
+		END AS [PA-DTL-UNIT-DATE],
+	'1' AS 'DENIAL-IND',
+	SUM([TOT-CHARGES]) AS 'TOTAL-DENIALS'
+FROM [DSH].[dbo].[2016_DSH_Denials_Detail]
+GROUP BY [PA-PT-NO-WOSCD],
+	[PA-PT-NO-SCD],
+	[PT-NO],
+	[PA-UNIT-NO],
+	[PA-DTL-UNIT-DATE];
+
+-- MEDICAID PMT INDICATOR 108084 TABLE --------------------------------
+DROP TABLE
+
+IF EXISTS [DSH].[dbo].[2016_DSH_MEDICAID_PMT_INDICATOR] GO
+	CREATE TABLE [DSH].[dbo].[2016_DSH_MEDICAID_PMT_INDICATOR] (
+		[PA-PT-NO-WOSCD] VARCHAR(50) NOT NULL,
+		[PA-PT-NO-SCD] CHAR(1) NOT NULL,
+		[PT-NO] VARCHAR(51) NOT NULL,
+		[PA-UNIT-NO] VARCHAR(50) NULL,
+		[PA-DTL-UNIT-DATE] VARCHAR(50) NULL,
+		[MEDICAID-PM-IP-OP-IND] INT NULL,
+		[TOTAL-PAYMENTS] MONEY
+		);
 
 INSERT INTO [DSH].[dbo].[2016_DSH_MEDICAID_PMT_INDICATOR]
-
-SELECT [PA-PT-NO-WOSCD]
-, [PA-PT-NO-SCD]
-, [PT-NO]
-, [PA-UNIT-NO]
-, CASE
-	WHEN [PA-UNIT-NO] IS NULL
-	THEN  NULL
-	ELSE CAST([PA-DTL-UNIT-DATE] AS DATE)
-  END AS [PA-DTL-UNIT-DATE]
-, CASE
-	WHEN LTRIM(RTRIM([PA-DTL-SVC-CD])) = '108084'
-	AND SUM([TOT-PAYMENTS]) < 0
-		THEN 1
+SELECT [PA-PT-NO-WOSCD],
+	[PA-PT-NO-SCD],
+	[PT-NO],
+	[PA-UNIT-NO],
+	CASE 
+		WHEN [PA-UNIT-NO] IS NULL
+			THEN NULL
+		ELSE CAST([PA-DTL-UNIT-DATE] AS DATE)
+		END AS [PA-DTL-UNIT-DATE],
+	CASE 
+		WHEN LTRIM(RTRIM([PA-DTL-SVC-CD])) = '108084'
+			AND SUM([TOT-PAYMENTS]) < 0
+			THEN 1
 		ELSE 0
-  END AS [MEDICAID-PMT-IP-OP-IND]
-, SUM([TOT-PAYMENTS]) AS [TOTAL-PAYMENTS]
-
+		END AS [MEDICAID-PMT-IP-OP-IND],
+	SUM([TOT-PAYMENTS]) AS [TOTAL-PAYMENTS]
 FROM [DSH].[dbo].[2016_DSH_Payments]
-
 WHERE LTRIM(RTRIM([PA-DTL-SVC-CD])) = '108084'
+--AND [TYPE] = 'IP'
 --AND [PT-NO] = '10104478713'
 --AND [PA-UNIT-NO] IS NOT NULL
-
-GROUP BY  [PA-PT-NO-WOSCD]
-, [PA-PT-NO-SCD]
-, [PT-NO]
-, [PA-UNIT-NO]
-, [PA-DTL-UNIT-DATE]
-, [PA-DTL-SVC-CD]
-;
+GROUP BY [PA-PT-NO-WOSCD],
+	[PA-PT-NO-SCD],
+	[PT-NO],
+	[PA-UNIT-NO],
+	[PA-DTL-UNIT-DATE],
+	[PA-DTL-SVC-CD];
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --SELECT *  FROM [#SECONDARY_INS_INDICATORS_DETAIL]
@@ -422,10 +452,10 @@ GROUP BY  [PA-PT-NO-WOSCD]
 --WHERE [MEDICAID-NON-PRIME-IND]='1' AND LEFT([PA-INS-PLAN],1) NOT IN ('U','D')
 --SELECT MAX([rank1])
 --FROM [custominsurance]
-
 /*Pivot Insurance Data*/
-DROP TABLE IF EXISTS [DSH_INSURANCE_TABLE_W_REPORT_GROUPS] 
-GO
+DROP TABLE
+
+IF EXISTS [DSH_INSURANCE_TABLE_W_REPORT_GROUPS] GO
 	--Add New Table
 	SELECT a.[PA-PT-NO-WOSCD],
 		a.[PA-PT-NO-SCD],
@@ -452,6 +482,11 @@ GO
 		h.[rank1] AS 'COB7',
 		h.[pa-ins-plan] AS 'INS7',
 		CASE 
+			WHEN (
+					DI1.[DENIAL-IND] = '1'
+					OR DI2.[DENIAL-IND] = '1'
+					)
+				THEN 'MEDICAID DENIAL'
 			WHEN i.[indicator] = 'PRIMARY MEDICAID'
 				AND j.[2NDRY-MEDICAID-ELIGIBLE] = '0'
 				AND J.[2NDRY-MEDICAID-OUT-OF-STATE-IND] = '0'
@@ -462,12 +497,10 @@ GO
 				AND J.[2NDRY-MEDICAID-MANAGED] = '0'
 				AND (
 					MPI.[MEDICAID-PM-IP-OP-IND] = '1'
-					OR
-					MPI2.[MEDICAID-PM-IP-OP-IND] = '1'
-				)
+					OR MPI2.[MEDICAID-PM-IP-OP-IND] = '1'
+					)
 				-- END EDIT
 				THEN 'PRIMARY MEDICAID'
-
 			WHEN i.[indicator] = 'PRIMARY MEDICAID'
 				AND (
 					J.[2NDRY-MEDICAID-ELIGIBLE] > '0'
@@ -482,7 +515,6 @@ GO
 					-- END EDIT
 					)
 				THEN 'MEDICAID FFS DUAL ELIGIBLE'
-
 			WHEN I.[INDICATOR] IN ('OTHER PRIMARY PAYER', 'PRIMARY MEDICARE')
 				AND (
 					j.[2ndry-medicaid-ffs] > '0'
@@ -491,7 +523,6 @@ GO
 					AND J.[2NDRY-MEDICAID-MANAGED] = '0'
 					)
 				THEN 'MEDICAID FFS DUAL ELIGIBLE'
-
 					--WHEN I.[INDICATOR] = 'PRIMARY MEDICAID' AND J.[2NDRY-MEDICARE-IND]>'0' THEN 'DUAL ELIGIBLE'
 			WHEN I.[INDICATOR] = 'PRIMARY MANAGED MEDICAID'
 				AND j.[2NDRY-MEDICAID-ELIGIBLE] = '0'
@@ -501,7 +532,6 @@ GO
 				AND J.[2NDRY-OTHER-INS-IND] = '0'
 				AND J.[2NDRY-MEDICAID-OUT-OF-STATE-IND] = '0'
 				THEN 'PRIMARY MEDICAID MANAGED CARE'
-
 			WHEN I.[INDICATOR] = 'PRIMARY MANAGED MEDICAID'
 				AND (
 					j.[2NDRY-MEDICAID-ELIGIBLE] > '0'
@@ -512,7 +542,6 @@ GO
 					OR J.[2NDRY-MEDICAID-MANAGED] <> '0'
 					)
 				THEN 'MEDICAID MANAGED CARE DUAL ELIGIBLE'
-
 			WHEN I.[INDICATOR] IN ('OTHER PRIMARY PAYER', 'PRIMARY MEDICARE')
 				AND (
 					J.[2NDRY-MEDICAID-MANAGED] > '0'
@@ -521,33 +550,27 @@ GO
 					-- END EDIT -------------------
 					)
 				THEN 'MEDICAID MANAGED CARE DUAL ELIGIBLE'
-
 			WHEN (
-			-- STEVE THIS IS NOT WORKING FOR SOME ACCOUNTS
-			--WHERE [PA-PT-NO-SCD] = '9'
-			--AND [PA-PT-NO-WOSCD] = '1010443771'
+					-- STEVE THIS IS NOT WORKING FOR SOME ACCOUNTS
+					--WHERE [PA-PT-NO-SCD] = '9'
+					--AND [PA-PT-NO-WOSCD] = '1010443771'
 					I.INDICATOR = 'PRIMARY SELF PAY'
-					OR
-					I.INDICATOR IS NULL
-				)
+					OR I.INDICATOR IS NULL
+					)
 				OR (
-						I.INDICATOR = 'PRIMARY MEDICAID'
-						AND (
-							(
-								MPI.[MEDICAID-PM-IP-OP-IND] = '0'
-								OR
-								MPI.[MEDICAID-PM-IP-OP-IND] IS NULL
+					I.INDICATOR = 'PRIMARY MEDICAID'
+					AND (
+						(
+							MPI.[MEDICAID-PM-IP-OP-IND] = '0'
+							OR MPI.[MEDICAID-PM-IP-OP-IND] IS NULL
 							)
-							OR
-							(
-								MPI2.[MEDICAID-PM-IP-OP-IND] = '0'
-								OR
-								MPI2.[MEDICAID-PM-IP-OP-IND] IS NULL
+						OR (
+							MPI2.[MEDICAID-PM-IP-OP-IND] = '0'
+							OR MPI2.[MEDICAID-PM-IP-OP-IND] IS NULL
 							)
 						)
-				)
+					)
 				THEN 'PRIMARY SELF PAY'
-
 			WHEN I.[INDICATOR] = 'PRIMARY OUT OF STATE MEDICAID'
 				AND j.[2NDRY-MEDICAID-ELIGIBLE] = '0'
 				AND J.[2NDRY-MEDICAID-OUT-OF-STATE-IND] = '0'
@@ -556,7 +579,6 @@ GO
 				AND J.[2NDRY-OTHER-INS-IND] = '0'
 				AND J.[2NDRY-MEDICAID-MANAGED] = '0'
 				THEN 'PRIMARY OUT OF STATE MEDICAID'
-
 			WHEN I.[INDICATOR] = 'PRIMARY OUT OF STATE MEDICAID'
 				AND (
 					j.[2NDRY-MEDICAID-ELIGIBLE] > '0'
@@ -566,7 +588,6 @@ GO
 					OR J.[2NDRY-OTHER-INS-IND] > '0'
 					)
 				THEN 'DUAL ELIGIBLE OUT OF STATE MEDICAID'
-
 			WHEN I.[INDICATOR] IN ('OTHER PRIMARY PAYER', 'PRIMARY MEDICARE')
 				AND (
 					J.[2NDRY-MEDICAID-FFS] = '0'
@@ -574,7 +595,6 @@ GO
 					AND J.[2NDRY-MEDICAID-OUT-OF-STATE-IND] > '0'
 					)
 				THEN 'DUAL ELIGIBLE OUT OF STATE MEDICAID'
-
 			WHEN (
 					(
 						I.[INDICATOR] = 'OTHER PRIMARY PAYER'
@@ -607,12 +627,12 @@ GO
 						AND J.[2NDRY-OTHER-INS-IND] = '0'
 						AND J.[2NDRY-SELF-PAY-IND] = '0'
 						AND J.[TOT-INS-PAYMTS] < '0' -- MIGHT NOT BE NECESSARY OR WANTED
-					)
+						)
 					-- EDIT SPS 3-6-2019
 					)
 				THEN 'UN-GROUPED'
 					-- EDIT SPS 3-4-2019 -----
-				ELSE 'UN-GROUPED'
+			ELSE 'UN-GROUPED'
 			END AS 'REPORTING GROUP',
 		CASE 
 			WHEN i.[indicator] = 'PRIMARY MEDICAID'
@@ -733,6 +753,7 @@ GO
 		j.[2NDRY-SELF-PAY-IND],
 		J.[2NDRY-MEDICAID-MANAGED],
 		ISNULL(COALESCE(MPI.[MEDICAID-PM-IP-OP-IND], MPI2.[MEDICAID-PM-IP-OP-IND]), 0) AS [MEDICAID-PM-IP-OP-IND],
+		ISNULL(COALESCE(DI1.[DENIAL-IND], DI2.[DENIAL-IND]), 0) AS 'DENIAL-IND',
 		J.[TOT-INS-PAYMTS],
 		k.[im-ind]
 	INTO #DSH_INSURANCE_TABLE_W_REPORT_GROUPS_TEMP
@@ -756,16 +777,20 @@ GO
 	LEFT OUTER JOIN [Secondary_Ins_Indicators_Summary] j ON a.[pa-pt-no-woscd] = j.[pa-pt-no-woscd]
 	LEFT OUTER JOIN [IM_Patients] k ON a.[pa-pt-no-woscd] = k.[pa-pt-no-woscd]
 	-- ADD MEDICAID PMT INDICATOR SPS 3-6-2019
-	LEFT OUTER JOIN [DSH].[DBO].[2016_DSH_MEDICAID_PMT_INDICATOR] AS MPI
-	ON A.[PA-PT-NO-WOSCD] = MPI.[PA-PT-NO-WOSCD]
+	LEFT OUTER JOIN [DSH].[DBO].[2016_DSH_MEDICAID_PMT_INDICATOR] AS MPI ON A.[PA-PT-NO-WOSCD] = MPI.[PA-PT-NO-WOSCD]
 		AND A.[PA-PT-NO-SCD] = MPI.[PA-PT-NO-SCD]
 		AND A.[pa-unit-no] IS NULL
-	LEFT OUTER JOIN [DSH].[DBO].[2016_DSH_MEDICAID_PMT_INDICATOR] AS MPI2
-	ON A.[PA-PT-NO-WOSCD] = MPI2.[PA-PT-NO-WOSCD]
+	LEFT OUTER JOIN [DSH].[DBO].[2016_DSH_MEDICAID_PMT_INDICATOR] AS MPI2 ON A.[PA-PT-NO-WOSCD] = MPI2.[PA-PT-NO-WOSCD]
 		AND A.[PA-PT-NO-SCD] = MPI2.[PA-PT-NO-SCD]
 		AND MPI2.[PA-UNIT-NO] IS NOT NULL
 		AND A.[pa-unit-no] = MPI2.[PA-UNIT-NO]
-;
+	LEFT OUTER JOIN [DSH].[DBO].[2016_DSH_ENCOUNTERS_W_SELECTED_DENIALS] AS DI1 ON A.[PA-PT-NO-WOSCD] = DI1.[PA-PT-NO-WOSCD]
+		AND A.[PA-PT-NO-SCD] = DI1.[PA-PT-NO-SCD]
+		AND A.[pa-unit-no] IS NULL
+	LEFT OUTER JOIN [DSH].[DBO].[2016_DSH_ENCOUNTERS_W_SELECTED_DENIALS] AS DI2 ON A.[PA-PT-NO-WOSCD] = DI2.[PA-PT-NO-WOSCD]
+		AND A.[PA-PT-NO-SCD] = DI2.[PA-PT-NO-SCD]
+		AND MPI2.[PA-UNIT-NO] IS NOT NULL
+		AND A.[pa-unit-no] = DI2.[PA-UNIT-NO];
 
 SELECT [PA-PT-NO-WOSCD],
 	[PA-PT-NO-SCD],
@@ -813,6 +838,7 @@ SELECT [PA-PT-NO-WOSCD],
 	[2NDRY-SELF-PAY-IND],
 	[2NDRY-MEDICAID-MANAGED],
 	[MEDICAID-PM-IP-OP-IND],
+	[DENIAL-IND],
 	[TOT-INS-PAYMTS],
 	[im-ind]
 INTO [DSH_INSURANCE_TABLE_W_REPORT_GROUPS]
@@ -863,20 +889,22 @@ GROUP BY [PA-PT-NO-WOSCD],
 	[2NDRY-SELF-PAY-IND],
 	[2NDRY-MEDICAID-MANAGED],
 	[MEDICAID-PM-IP-OP-IND],
+	[DENIAL-IND],
 	[TOT-INS-PAYMTS],
 	[im-ind]
 GO
+
 ;
 
 DROP TABLE #DSH_INSURANCE_TABLE_W_REPORT_GROUPS_TEMP
 GO
+
 ;
 
 SELECT *
 FROM [DSH_INSURANCE_TABLE_W_REPORT_GROUPS]
+WHERE [DENIAL-IND] = '1'
 --Where [pa-pt-no-woscd] = '1009346204'
 --where --([REPORTING GROUP] <>'' and [primary-type] <>'other primary payer')
 --[pa-pt-no-woscd] IN ('')
-ORDER BY 'primary-type'
-
-;
+ORDER BY 'primary-type';
