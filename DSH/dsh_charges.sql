@@ -13,6 +13,9 @@ GO
 		[PA-PT-NO-WOSCD] VARCHAR(11) NOT NULL,
 		[PA-PT-NO-SCD] CHAR(1) NOT NULL,
 		[PT-NO] VARCHAR(50) NOT NULL,
+		[PA-MED-REC-NO] VARCHAR(50) NOT NULL,
+		[admit_date] DATETIME NULL,
+		[dsch_date] DATETIME NULL,
 		[PA-UNIT-NO] DECIMAL(4, 0) NULL,
 		[unit-date] DATETIME NULL,
 		[PA-DTL-UNIT-DATE] DATETIME NULL,
@@ -29,6 +32,7 @@ GO
 		[TOT-CHG-QTY] DECIMAL(5, 0) NULL,
 		[TOT-CHARGES] MONEY NULL,
 		[TOT-PROF-FEES] MONEY NULL,
+		[Sum_of_Chargesand_Prof_Fees] MONEY NULL,
 		[REPORTING-GROUP] VARCHAR(100) NULL
 		);
 
@@ -36,6 +40,9 @@ INSERT INTO [2016_DSH_Charges] (
 	[PA-PT-NO-WOSCD],
 	[PA-PT-NO-SCD],
 	[PT-NO],
+	[PA-MED-REC-NO],
+	[admit_date],
+	[dsch_date],
 	[PA-UNIT-NO],
 	[unit-date],
 	[PA-DTL-UNIT-DATE],
@@ -52,12 +59,16 @@ INSERT INTO [2016_DSH_Charges] (
 	[TOT-CHG-QTY],
 	[TOT-CHARGES],
 	[TOT-PROF-FEES],
+	[Sum_of_Chargesand_Prof_Fees],
 	[REPORTING-GROUP]
 	)
     
 SELECT a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1] AS 'PA-PT-NO-SCD',
 	CAST(a.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(a.[pa-pt-no-scd-1] AS VARCHAR) AS 'PT-NO',
+	B.[pa-med-rec-no],
+	B.[admit_date],
+	B.[dsch_date],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date] AS 'UNIT-DATE',
 	A.[PA-DTL-UNIT-DATE],
@@ -74,6 +85,7 @@ SELECT a.[pa-pt-no-woscd],
 	SUM(A.[PA-DTL-CHG-QTY]) AS 'TOT-CHG-QTY',
 	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-CHARGES',
 	SUM(A.[PA-DTL-PROFESSIONAL-FEE]) AS 'TOT-PROF-FEES',
+	SUM(A.[PA-DTL-CHG-AMT]) + SUM(A.[PA-DTL-PROFESSIONAL-FEE]) AS 'Sum_of_Chargesand_Prof_Fees',
 	RPTGRP.[REPORTING GROUP]
 
 FROM [Echo_Archive].dbo.[DetailInformation] a
@@ -96,6 +108,9 @@ WHERE a.[pa-dtl-type-ind] IN ('7', '8', 'A', 'B')
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1],
+	B.[pa-med-rec-no],
+	B.[admit_date],
+	B.[dsch_date],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date],
 	A.[PA-DTL-UNIT-DATE],
@@ -117,6 +132,9 @@ UNION
 SELECT a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1] AS 'PA-PT-NO-SCD',
 	CAST(a.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(a.[pa-pt-no-scd-1] AS VARCHAR) AS 'PT-NO',
+	B.[pa-med-rec-no],
+	B.[admit_date],
+	B.[dsch_date],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date] AS 'UNIT-DATE',
 	A.[PA-DTL-UNIT-DATE],
@@ -133,7 +151,9 @@ SELECT a.[pa-pt-no-woscd],
 	SUM(A.[PA-DTL-CHG-QTY]) AS 'TOT-CHG-QTY',
 	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-CHARGES',
 	SUM(A.[PA-DTL-PROFESSIONAL-FEE]) AS 'TOT-PROF-FESS',
-    RPTGRP.[REPORTING GROUP]
+	SUM(A.[PA-DTL-CHG-AMT]) + SUM(A.[PA-DTL-PROFESSIONAL-FEE]) AS 'Sum_of_Chargesand_Prof_Fees',
+	RPTGRP.[REPORTING GROUP]
+
 FROM [Echo_ACTIVE].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND A.[PA-DTL-DATE] >= B.[START_UNIT_DATE]
@@ -153,6 +173,9 @@ WHERE a.[pa-dtl-type-ind] IN ('7', '8', 'A', 'B')
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1],
+	B.[pa-med-rec-no],
+	B.[admit_date],
+	B.[dsch_date],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date],
 	A.[PA-DTL-UNIT-DATE],
@@ -192,6 +215,9 @@ UNION
 SELECT a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1] AS 'PA-PT-NO-SCD',
 	CAST(a.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(a.[pa-pt-no-scd-1] AS VARCHAR) AS 'PT-NO',
+	B.[pa-med-rec-no],
+	B.[admit_date],
+	B.[dsch_date],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date] AS 'UNIT-DATE',
 	A.[PA-DTL-UNIT-DATE],
@@ -208,7 +234,9 @@ SELECT a.[pa-pt-no-woscd],
 	SUM(A.[PA-DTL-CHG-QTY]) AS 'TOT-CHG-QTY',
 	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-CHARGES',
 	SUM(A.[PA-DTL-PROFESSIONAL-FEE]) AS 'TOT-PROF-FEES',
-    RPTGRP.[REPORTING GROUP]
+	SUM(A.[PA-DTL-CHG-AMT]) + SUM(A.[PA-DTL-PROFESSIONAL-FEE]) AS 'Sum_of_Chargesand_Prof_Fees',
+	RPTGRP.[REPORTING GROUP]
+
 FROM [Echo_Archive].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND b.[pa-unit-no] IS NULL
@@ -227,6 +255,9 @@ WHERE a.[pa-dtl-type-ind] IN ('7', '8', 'A', 'B')
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1],
+	B.[pa-med-rec-no],
+	B.[admit_date],
+	B.[dsch_date],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date],
 	A.[PA-DTL-UNIT-DATE],
@@ -248,6 +279,9 @@ UNION
 SELECT a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1] AS 'PA-PT-NO-SCD',
 	CAST(a.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(a.[pa-pt-no-scd-1] AS VARCHAR) AS 'PT-NO',
+	B.[pa-med-rec-no],
+	B.[admit_date],
+	B.[dsch_date],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date] AS 'UNIT-DATE',
 	A.[PA-DTL-UNIT-DATE],
@@ -264,7 +298,9 @@ SELECT a.[pa-pt-no-woscd],
 	SUM(A.[PA-DTL-CHG-QTY]) AS 'TOT-CHG-QTY',
 	SUM(A.[PA-DTL-CHG-AMT]) AS 'TOT-CHARGES',
 	SUM(A.[PA-DTL-PROFESSIONAL-FEE]) AS 'TOT-PROF-FEES',
-    RPTGRP.[REPORTING GROUP]
+	SUM(A.[PA-DTL-CHG-AMT]) + SUM(A.[PA-DTL-PROFESSIONAL-FEE]) AS 'Sum_of_Chargesand_Prof_Fees',
+	 RPTGRP.[REPORTING GROUP]
+
 FROM [Echo_ACTIVE].dbo.[DetailInformation] a
 INNER JOIN [Encounters_For_DSH] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND b.[pa-unit-no] IS NULL --DATEADD(DAY,-(DAY(DATEADD(MONTH, 1,a.[pa-dtl-date]))),DATEADD(MONTH,1,a.[pa-dtl-date]))
@@ -283,6 +319,9 @@ WHERE a.[pa-dtl-type-ind] IN ('7', '8', 'A', 'B')
 --AND a.[pa-pt-no-woscd] = '1010586387'
 GROUP BY a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd-1],
+	B.[pa-med-rec-no],
+	B.[admit_date],
+	B.[dsch_date],
 	B.[PA-UNIT-NO],
 	b.[pa-unit-date],
 	A.[PA-DTL-UNIT-DATE],
@@ -305,6 +344,9 @@ UNION
 SELECT LEFT([PT_Number], (len([PT_Number]) - 1)) AS 'pa-pt-no-woscd',
 	cast(RIGHT(LTRIM(RTRIM([PT_Number])), 1) AS DECIMAL(4, 0)) AS 'PA-PT-NO-SCD',
 	[PT_Number] AS 'PT-NO',
+	COALESCE(B.[pa-med-rec-no], C.[PA-MED-REC-NO]) AS 'PA-MED-REC-NO',
+	A.[ADM_DT] AS 'admit_date',
+	A.[DSCH_DT] AS 'dsch_date',
 	A.[pa-unit-no],
 	A.[unit-date],
 	'' AS 'PA-DTL-UNIT-DATE',
@@ -321,7 +363,8 @@ SELECT LEFT([PT_Number], (len([PT_Number]) - 1)) AS 'pa-pt-no-woscd',
 	SUM(A.[QTY]) AS 'TOT-CHG-QTY',
 	SUM(A.[CHG_AMT]) AS 'TOT-CHARGES',
 	'0' AS 'TOT-PROF-FEES',
-    RPTGRP.[REPORTING GROUP]
+	SUM(A.[CHG_AMT]) AS 'Sum_of_Chargesand_Prof_Fees', 
+	    RPTGRP.[REPORTING GROUP]
 
 FROM dbo.[2016_ALL_BFW_CHGS] a
 LEFT OUTER JOIN [Echo_Archive].dbo.[PatientDemographics] b ON a.[PT_Number] = CAST(b.[pa-pt-no-woscd] AS VARCHAR) + CAST(b.[pa-pt-no-scd-1] AS VARCHAR)
@@ -336,6 +379,9 @@ ON A.[PT_Number] = CAST(RPTGRP.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(RPTGRP.[PA-PT
 
 WHERE len([pt_number]) >= 1 --- Had to add this after I adjusted BFW files to include [pa-dtl-type-ind] which I need for identifying R&B charges.  Some how an extra line under pt_number was added to 2016_ALL_BFW_Chgs and was giving me errors when running this query 
 GROUP BY a.[PT_Number],
+	COALESCE(B.[pa-med-rec-no], C.[PA-MED-REC-NO]),
+	A.[ADM_DT],
+	A.[DSCH_DT],
 	A.[pa-unit-no],
 	A.[unit-date],
 	A.[PA-DTL-TYPE-IND],
@@ -346,5 +392,84 @@ GROUP BY a.[PT_Number],
 	b.[pa-bfw-chg-tot],
 	C.[PA-BFW-CHG-TOT],
     RPTGRP.[REPORTING GROUP]
+
+	-- 340B INDICATOR TABLE --------------------------------
+DROP TABLE IF EXISTS [DSH].[dbo].[2016_340B_INDICATOR]
+GO
+
+CREATE TABLE [DSH].[dbo].[2016_340B_INDICATOR] (
+	 [PA-PT-NO-WOSCD] VARCHAR(50) NOT NULL
+    , [PA-PT-NO-SCD] CHAR(1) NOT NULL
+    , [PT-NO] VARCHAR(51) NOT NULL
+	,[admit_date] DATETIME NULL
+	,[dsch_date] DATETIME NULL
+	, [PA-UNIT-NO] VARCHAR(50) NULL
+	, [PA-DTL-SVC-CD] VARCHAR (50) NULL
+	 ,[PA-DTL-CDM-DESCRIPTION] VARCHAR (50) NULL
+	, [PA-DTL-UNIT-DATE] VARCHAR(50) NULL
+	,[TYPE] VARCHAR (50) NULL
+	,[340B-IND] INT NULL
+	,[REPORTING-GROUP] VARCHAR (50) NULL
+    ,[TOT-CHG-QTY] decimal
+	--, [TOTAL-CHARGES] MONEY
+	,[Total Charges including Prof Fees] MONEY
+)
+;
+
+INSERT INTO [DSH].[dbo].[2016_340B_INDICATOR]
+
+SELECT [PA-PT-NO-WOSCD]
+, [PA-PT-NO-SCD]
+, [PT-NO]
+, [admit_date]
+, [dsch_date]
+, [PA-UNIT-NO]
+, [PA-DTL-SVC-CD]
+, [PA-DTL-CDM-DESCRIPTION]
+--, CASE
+--	WHEN [PA-UNIT-NO] IS NULL
+--	THEN  NULL
+--	ELSE CAST([PA-DTL-UNIT-DATE] AS DATE)
+--  END AS [PA-DTL-UNIT-DATE]
+, [PA-DTL-UNIT-DATE]
+, [TYPE]
+, CASE
+	WHEN left([PA-DTL-SVC-CD],3) = '415'
+		THEN 1
+		ELSE 0
+  END AS [340B-IND]
+, [REPORTING-GROUP]
+, [TOT-CHG-QTY]  
+--,SUM([TOT-CHARGES]) AS [TOTAL-CHARGES]
+,SUM([Sum_of_Chargesand_Prof_Fees]) as 'Total Chgs including Prof Fees'
+
+
+FROM [DSH].[dbo].[2016_DSH_Charges]
+
+WHERE left([PA-DTL-SVC-CD],3) = '415' 
+AND [TYPE] = 'OP' 
+ --AND [REPORTING-GROUP] IN (
+ --      'PRIMARY MEDICAID',
+ --      'PRIMARY MEDICAID MANAGED CARE',
+ --      'MEDICAID FFS DUAL ELIGIBLE',
+ --      'MEDICAID MANAGED CARE DUAL ELIGIBLE',
+ --      'PRIMARY OUT OF STATE MEDICAID',
+ --      'DUAL ELIGIBLE OUT OF STATE MEDICAID'
+ --      )
+
+GROUP BY  [PA-PT-NO-WOSCD]
+, [PA-PT-NO-SCD]
+, [PT-NO]
+, [admit_date]
+, [dsch_date]
+, [PA-UNIT-NO]
+, [PA-DTL-SVC-CD]
+, [PA-DTL-CDM-DESCRIPTION]
+, [PA-DTL-UNIT-DATE]
+, [TYPE]
+, [REPORTING-GROUP]
+, [TOT-CHG-QTY]
+
+
 
 
