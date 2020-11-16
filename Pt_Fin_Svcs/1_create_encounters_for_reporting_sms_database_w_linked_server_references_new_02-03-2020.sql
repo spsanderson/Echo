@@ -36,12 +36,13 @@ SELECT A.[PA-PT-NO-woscd],
 FROM [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[Echo_ACTIVE].dbo.PatientDemographics a
 LEFT OUTER JOIN [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[Echo_ACTIVE].dbo.unitizedaccounts b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND a.[pa-pt-no-scd] = b.[pa-pt-no-scd-1]
-WHERE (
-		a.[pa-acct-type] IN ('0', '6', '7')
-		AND b.[pa-unit-no] IS NOT NULL
-		AND b.[pa-unit-date] BETWEEN '2007-01-01 00:00:00.000'
-			AND getdate()
-		)
+WHERE a.[pa-acct-type] IN ('0', '6', '7')
+	AND b.[pa-unit-no] IS NOT NULL
+	AND b.[pa-unit-date] BETWEEN '2007-01-01 00:00:00.000'
+		AND getdate()
+
+
+	
 
 UNION
 
@@ -98,12 +99,27 @@ SELECT [PA-PT-NO-woscd],
 FROM dbo.[#Units]
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-USE [SMS]
-
-DROP TABLE IF EXISTS [Unit_Partitions]
+-- Create a new table called 'Unit_Partitions' in schema 'dbo'
+-- Drop the table if it already exists
+IF OBJECT_ID('dbo.Unit_Partitions', 'U') IS NOT NULL
+DROP TABLE dbo.Unit_Partitions
+GO
+-- Create the table in the specified schema
+CREATE TABLE dbo.Unit_Partitions
+(
+	Unit_PartitionsID_PK INT NOT NULL PRIMARY KEY, -- primary key column
+	[PA-PT-NO-WOSCD] NVARCHAR(50) NOT NULL,
+	[PA-PT-NO-SCD] NVARCHAR(10) NOT NULL,
+	[PA-CTL-PAA-XFER-DATE] DATETIME2,
+	[START-UNIT-DATE] DATE,
+	[END-UNIT-DATE] DATE,
+	[PA-UNIT-NO] NVARCHAR(10) NULL,
+	[PA-UNIT-STS] NVARCHAR(50) NULL
+);
 GO
 
+-- Insert rows into table 'TableName'
+INSERT INTO dbo.Unit_Partitions
 SELECT a.[pa-pt-no-woscd],
 	a.[pa-pt-no-scd],
 	A.[PA-CTL-PAA-XFER-DATE],
@@ -111,7 +127,6 @@ SELECT a.[pa-pt-no-woscd],
 	DATEADD(DAY, 0, a.[unit-date]) AS 'End_Unit_Date',
 	a.[pa-unit-no],
 	A.[PA-UNIT-STS]
-INTO [Unit_Partitions]
 FROM [dbo].[#Units_W_Rank] a
 LEFT OUTER JOIN [dbo].[#Units_W_Rank] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 	AND b.[alt-pa-unit-no] = a.[alt-pa-unit-no] - 1
