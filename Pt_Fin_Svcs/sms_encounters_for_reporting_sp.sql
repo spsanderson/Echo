@@ -108,7 +108,7 @@ BEGIN
 
 	-- Create the table in the specified schema
 	CREATE TABLE dbo.Unit_Partitions (
-		Unit_PartitionsID_PK INT NOT NULL PRIMARY KEY, -- primary key column
+		Unit_PartitionsID_PK INT IDENTITY(1,1) NOT NULL PRIMARY KEY, -- primary key column
 		[PA-PT-NO-WOSCD] NVARCHAR(50) NOT NULL,
 		[PA-PT-NO-SCD] NVARCHAR(10) NOT NULL,
 		[PA-CTL-PAA-XFER-DATE] DATETIME2,
