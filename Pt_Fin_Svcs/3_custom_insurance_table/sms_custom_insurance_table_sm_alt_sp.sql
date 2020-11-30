@@ -1,0 +1,251 @@
+USE [SMS]
+GO
+
+/*
+***********************************************************************
+File: sms_custom_insurance_table_sm_alt_sp.sql
+
+Input Parameters:
+	None
+
+Tables/Views:
+	[dbo].[DISTINCT_ENCOUNTERS_FOR_REPORTING_ALT]
+    [dbo].[ENCOUNTERS_FOR_REPORTING]
+    [dbo].[Payments_For_Reporting_Ins_Plan_Level_ALT]
+    [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[Echo_Archive].DBO.INSURANCEINFORMATION
+
+Creates Table:
+	
+
+Functions:
+	none	
+
+Author: Steven P Sanderson II, MPH
+
+Purpose/Description
+	Create custom insurance table
+
+Revision History:
+Date		Version		Description
+----		----		----
+2020-11-29	v1			Initial Creation
+***********************************************************************
+*/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE dbo.c_sms_custom_insurance_table_sm_alt_sp
+AS
+SET ANSI_NULLS ON
+SET ANSI_WARNINGS ON
+SET QUOTED_IDENTIFIER ON
+
+BEGIN
+	SET NOCOUNT ON;
+
+	-- IF THE TABLE EXISTS THEN TRUNCATE IT, ELSE BUILD IT
+	IF OBJECT_ID('dbo.DISTINCT_ENCOUNTERS_FOR_REPORTING_ALT', 'U') IS NOT NULL
+		TRUNCATE TABLE dbo.DISTINCT_ENCOUNTERS_FOR_REPORTING_ALT
+	ELSE
+		CREATE TABLE dbo.[DISTINCT_ENCOUNTERS_FOR_REPORTING_ALT] (
+			[PK] INT IDENTITY(1, 1) PRIMARY KEY NOT NULL,
+			[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
+			[PA-PT-NO-SCD] CHAR(1) NOT NULL,
+			[PA-UNIT-NO] DECIMAL(4, 0) NULL,
+			[ADMIT_DATE] DATETIME NULL,
+			[DSCH_DATE] DATETIME NULL,
+			[PA-UNIT-DATE] DATETIME NULL,
+			[PA-CTL-PAA-XFER-DATE] DATETIME NULL,
+			[PA-UNIT-STS] VARCHAR(1) NULL,
+			[PA-ACCT-TYPE] CHAR(1) NULL,
+			[PA-MED-REC-NO] CHAR(12) NULL,
+			[PA-PT-NAME] CHAR(25) NULL
+			);
+
+	INSERT INTO dbo.[DISTINCT_ENCOUNTERS_FOR_REPORTING_alt]
+	SELECT [PA-PT-NO-WOSCD],
+		[PA-PT-NO-SCD],
+		[PA-UNIT-NO],
+		[ADMIT_DATE],
+		[DSCH_DATE],
+		[PA-UNIT-DATE],
+		[PA-CTL-PAA-XFER-DATE],
+		[PA-UNIT-STS],
+		[PA-ACCT-TYPE],
+		[PA-MED-REC-NO],
+		[PA-PT-NAME]
+	FROM SMS.[dbo].[ENCOUNTERS_FOR_REPORTING]
+
+	-- IF THE TABLE EXISTS THEN TRUNCATE IT, ELSE BUILD IT
+	IF OBJECT_ID('dbo.DISTINCT_ENCOUNTERS_FOR_REPORTING_2_ALT', 'U') IS NOT NULL
+		TRUNCATE TABLE dbo.DISTINCT_ENCOUNTERS_FOR_REPORTING_2_ALT
+	ELSE
+		CREATE TABLE dbo.DISTINCT_ENCOUNTERS_FOR_REPORTING_2_ALT (
+			[PK] INT IDENTITY(1, 1) PRIMARY KEY NOT NULL,
+			[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
+			[PA-PT-NO-SCD] CHAR(1) NOT NULL,
+			[PA-UNIT-NO] DECIMAL(4, 0) NULL,
+			[ADMIT_DATE] DATETIME NULL,
+			[DSCH_DATE] DATETIME NULL,
+			[PA-UNIT-DATE] DATETIME NULL,
+			[PA-CTL-PAA-XFER-DATE] DATETIME NULL,
+			[PA-UNIT-STS] VARCHAR(1) NULL,
+			[PA-ACCT-TYPE] CHAR(1) NULL,
+			[PA-MED-REC-NO] CHAR(12) NULL,
+			[PA-PT-NAME] CHAR(25) NULL
+			);
+
+	INSERT INTO dbo.DISTINCT_ENCOUNTERS_FOR_REPORTING_2_ALT
+	SELECT [PA-PT-NO-WOSCD],
+		[PA-PT-NO-SCD],
+		[PA-UNIT-NO],
+		[ADMIT_DATE],
+		[DSCH_DATE],
+		[PA-UNIT-DATE],
+		[PA-CTL-PAA-XFER-DATE],
+		[PA-UNIT-STS],
+		[PA-ACCT-TYPE],
+		[PA-MED-REC-NO],
+		[PA-PT-NAME]
+	FROM SMS.[dbo].[ENCOUNTERS_FOR_REPORTING]
+	WHERE [pa-unit-sts] <> 'U'
+		OR [pa-unit-no] = '0';
+
+	-- INSURANCE PLAN ROLLUP ALT
+	SELECT [PA-PT-NO-WOSCD],
+		[PA-PT-NO-SCD],
+		[PA-CTL-PAA-XFER-DATE],
+		CAST([pa-pt-no-woscd] AS VARCHAR) + CAST([pa-pt-no-scd] AS VARCHAR) AS [PT-NO],
+		[PA-UNIT-NO],
+		[UNIT-DATE],
+		[PA-DTL-INS-CO-CD],
+		[PA-DTL-INS-PLAN-NO],
+		CASE 
+			WHEN LEN(ltrim(rtrim([pa-dtl-ins-plan-no]))) = '1'
+				THEN CAST(CAST(LTRIM(RTRIM([pa-dtl-ins-co-cd])) AS VARCHAR) + CONVERT(VARCHAR(1), 0) + CAST(LTRIM(RTRIM([pa-dtl-ins-plan-no])) AS VARCHAR) AS VARCHAR)
+			WHEN LEN(LTRIM(RTRIM([pa-dtl-ins-plan-no]))) = '2'
+				THEN CAST(CAST(LTRIM(RTRIM([pa-dtl-ins-co-cd])) AS VARCHAR) + CAST(LTRIM(RTRIM([pa-dtl-ins-plan-no])) AS VARCHAR) AS VARCHAR)
+			END AS [PA-INS-PLAN],
+		[pa-unit-sts],
+		MIN([1ST-PAID-DATE]) AS [1st-paid-date],
+		sum([tot-payments]) AS [Tot_Ins_Pymts]
+	INTO #Ins_Plan_Payment_Rollup_Alt
+	FROM [SMS].dbo.[Payments_For_Reporting_Ins_Plan_Level_ALT]
+	GROUP BY [pa-pt-no-woscd],
+		[pa-pt-no-scd],
+		[pa-ctl-paa-xfer-date],
+		[pa-unit-no],
+		[unit-date],
+		[pa-dtl-ins-co-cd],
+		[pa-dtl-ins-plan-no],
+		[pa-unit-sts];
+
+	-- IF THE TABLE EXISTS THEN TRUNCATE IT, ELSE BUILD IT
+	IF OBJECT_ID('dbo.CUSTOMINSURANCE_SM_1_ALT', 'U') IS NOT NULL
+		TRUNCATE TABLE dbo.CUSTOMINSURANCE_SM_1_ALT
+	ELSE
+		CREATE TABLE dbo.CUSTOMINSURANCE_SM_1_ALT (
+			[PA-PT-NO-WOSCD] DECIMAL(11, 0) NOT NULL,
+			[PA-PT-NO-SCD] CHAR(1) NOT NULL,
+			[PA-CTL-PAA-XFER-DATE] DATETIME NULL,
+			[PA-UNIT-STS] VARCHAR(1) NULL,
+			[pa-unit-no] DECIMAL(4, 0) NULL,
+			[PA-UNIT-DATE] DATETIME NULL,
+			[PA-INS-PLAN] VARCHAR(100) NULL,
+			[PA-INS-POL-NO] CHAR(11) NULL,
+			[PA-INS-SUBSCR-INS-GROUP-ID] CHAR(20) NULL,
+			[PA-INS-GRP-NO] CHAR(6) NULL,
+			[PA-LAST-INS-PAY-DATE] DATETIME NULL,
+			[PA-BAL-INS-PROR-NET-AMT] MONEY NULL,
+			[INS-PAY-AMT] MONEY NULL,
+			[RANK1] CHAR(4) NULL
+			);
+
+	SELECT DISTINCT (a.[PA-PT-NO-WOSCD]),
+		a.[PA-PT-NO-SCD],
+		A.[PA-CTL-PAA-XFER-DATE],
+		A.[PA-UNIT-STS],
+		A.[PA-UNIT-NO],
+		A.[PA-UNIT-DATE],
+		CASE 
+			WHEN LEN(ltrim(rtrim(b.[pa-ins-plan-no]))) = '1'
+				THEN CAST(CAST(LTRIM(RTRIM(B.[pa-ins-co-cd])) AS VARCHAR) + CONVERT(VARCHAR(1), 0) + CAST(LTRIM(RTRIM(B.[pa-ins-plan-no])) AS VARCHAR) AS VARCHAR)
+			WHEN LEN(LTRIM(RTRIM(b.[pa-ins-plan-no]))) = '2'
+				THEN CAST(CAST(LTRIM(RTRIM(B.[pa-ins-co-cd])) AS VARCHAR) + CAST(LTRIM(RTRIM(B.[pa-ins-plan-no])) AS VARCHAR) AS VARCHAR)
+			END AS 'PA-INS-PLAN',
+		[PA-INS-POL-NO],
+		[PA-INS-SUBSCR-INS-GROUP-ID],
+		[PA-INS-GRP-NO],
+		CASE 
+			WHEN A.[PA-UNIT-STS] <> 'U'
+				THEN B.[PA-LAST-INS-PAY-DATE]
+			ELSE NULL
+			END AS [PA-LAST-INS-PAY-DATE],
+		CASE 
+			WHEN A.[PA-UNIT-STS] <> 'U'
+				THEN B.[PA-BAL-INS-PROR-NET-AMT]
+			ELSE NULL
+			END AS [PA-BAL-INS-PROR-NET-AMT],
+		CASE 
+			WHEN A.[PA-UNIT-STS] <> 'U'
+				THEN ISNULL(B.[PA-BAL-INS-PAY-AMT], 0)
+			ELSE NULL
+			END AS 'Ins-Pay-Amt',
+		RANK() OVER (
+			PARTITION BY B.[PA-PT-NO-WOSCD],
+			A.[PA-UNIT-DATE] ORDER BY b.[pa-ins-prty] ASC,
+				b.[pa-bal-ins-pay-amt] ASC,
+				b.[pa-ins-co-cd] ASC,
+				b.[pa-ins-plan-no] ASC
+			) AS 'RANK1'
+	FROM [SMS].[dbo].[DISTINCT_ENCOUNTERS_FOR_REPORTING_ALT] a
+	INNER JOIN [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[Echo_Archive].DBO.INSURANCEINFORMATION B ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
+		AND a.[pa-ctl-paa-xfer-date] = b.[pa-ctl-paa-xfer-date]
+	
+	UNION
+	
+	SELECT DISTINCT (a.[PA-PT-NO-WOSCD]),
+		a.[PA-PT-NO-SCD],
+		A.[PA-CTL-PAA-XFER-DATE],
+		A.[PA-UNIT-STS],
+		A.[PA-UNIT-NO],
+		A.[PA-UNIT-DATE],
+		CASE 
+			WHEN LEN(ltrim(rtrim(b.[pa-ins-plan-no]))) = '1'
+				THEN CAST(CAST(LTRIM(RTRIM(B.[pa-ins-co-cd])) AS VARCHAR) + CONVERT(VARCHAR(1), 0) + CAST(LTRIM(RTRIM(B.[pa-ins-plan-no])) AS VARCHAR) AS VARCHAR)
+			WHEN LEN(LTRIM(RTRIM(b.[pa-ins-plan-no]))) = '2'
+				THEN CAST(CAST(LTRIM(RTRIM(B.[pa-ins-co-cd])) AS VARCHAR) + CAST(LTRIM(RTRIM(B.[pa-ins-plan-no])) AS VARCHAR) AS VARCHAR)
+			END AS 'PA-INS-PLAN',
+		[PA-INS-POL-NO],
+		[PA-INS-SUBSCR-INS-GROUP-ID],
+		[PA-INS-GRP-NO],
+		CASE 
+			WHEN A.[PA-UNIT-STS] <> 'U'
+				THEN B.[PA-LAST-INS-PAY-DATE]
+			ELSE NULL
+			END AS [PA-LAST-INS-PAY-DATE],
+		CASE 
+			WHEN A.[PA-UNIT-STS] <> 'U'
+				THEN B.[PA-BAL-INS-PROR-NET-AMT]
+			ELSE NULL
+			END AS [PA-BAL-INS-PROR-NET-AMT],
+		CASE 
+			WHEN A.[PA-UNIT-STS] <> 'U'
+				THEN ISNULL(B.[PA-BAL-INS-PAY-AMT], 0)
+			ELSE NULL
+			END AS 'Ins-Pay-Amt',
+		RANK() OVER (
+			PARTITION BY B.[PA-PT-NO-WOSCD],
+			A.[PA-UNIT-DATE] ORDER BY b.[pa-ins-prty] ASC,
+				b.[pa-bal-ins-pay-amt] ASC,
+				b.[pa-ins-co-cd] ASC,
+				b.[pa-ins-plan-no] ASC
+			) AS 'RANK1'
+	FROM [SMS].[dbo].[DISTINCT_ENCOUNTERS_FOR_REPORTING_ALT] a
+	INNER JOIN [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[echo_active].DBO.INSURANCEINFORMATION B ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
+		AND a.[pa-ctl-paa-xfer-date] = b.[pa-ctl-paa-xfer-date];
+END
+
