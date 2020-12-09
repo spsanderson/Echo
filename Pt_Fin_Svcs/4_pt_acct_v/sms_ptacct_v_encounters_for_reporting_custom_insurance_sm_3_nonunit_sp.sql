@@ -1,0 +1,194 @@
+USE [SMS]
+GO
+
+/*
+***********************************************************************
+File: sms_ptacct_v_encounters_for_reporting_custom_insurance_sm_3_nonunit_sp.sql
+
+Input Parameters:
+	None
+
+Tables/Views:
+	[SMS].dbo.[CUSTOM_INSURANCE_SM_ALT]
+
+Creates Table:
+	dbo.CUSTOM_INSURANCE_SM_3_NonUnit
+
+Functions:
+	none	
+
+Author: Steven P Sanderson II, MPH
+
+Purpose/Description
+    Run in Batch 1
+	Create patient account view dbo.CUSTOM_INSURANCE_SM_3_NonUnit
+
+Revision History:
+Date		Version		Description
+----		----		----
+2020-12-08	v1			Initial Creation
+***********************************************************************
+*/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE dbo.c_sms_ptacct_v_encounters_for_reporting_custom_insurance_sm_3_nonunit_sp
+AS
+SET ANSI_NULLS ON
+SET ANSI_WARNINGS ON
+SET QUOTED_IDENTIFIER ON
+
+BEGIN
+	SET NOCOUNT ON;
+
+	-- Unit 0 (Open Unit Accounts)
+	IF OBJECT_ID('dbo.CUSTOM_INSURANCE_SM_3_NonUnit', 'U') IS NOT NULL
+		TRUNCATE TABLE dbo.CUSTOM_INSURANCE_SM_3_NonUnit
+	ELSE
+		CREATE TABLE dbo.CUSTOM_INSURANCE_SM_3_NonUnit (
+			[PK] INT IDENTITY(1, 1) PRIMARY KEY NOT NULL,
+			[PA-PT-NO-WOSCD] VARCHAR(100),
+			[PA-PT-NO-SCD] VARCHAR(100),
+			[PA-CTL-PAA-XFER-DATE] SMALLDATETIME,
+			[PA-UNIT-NO] VARCHAR(100),
+			[PA-MED-REC-NO] VARCHAR(100),
+			[PA-PT-NAME] VARCHAR(500),
+			[ADMIT_DATE] SMALLDATETIME,
+			[DSCH_DATE] SMALLDATETIME,
+			[PA-UNIT-DATE] SMALLDATETIME,
+			[PA-ACCT-TYPE] VARCHAR(100),
+			[COB_1] VARCHAR(100),
+			[INS1] VARCHAR(100),
+			[INS1_POL_NO] VARCHAR(100),
+			[INS1_SUBSCR_GROUP_ID] VARCHAR(100),
+			[INS1_GRP_NO] VARCHAR(100),
+			[INS1_PYMTS] MONEY,
+			[INS1_FIRST_PAID] SMALLDATETIME,
+			[INS1_BALANCE] MONEY,
+			[COB_2] VARCHAR(100),
+			[INS2] VARCHAR(100),
+			[INS2_POL_NO] VARCHAR(100),
+			[INS2_SUBSCR_GROUP_ID] VARCHAR(100),
+			[INS2_GRP_NO] VARCHAR(100),
+			[INS2_PYMTS] MONEY,
+			[INS2_FIRST_PAID] SMALLDATETIME,
+			[INS2_BALANCE] MONEY,
+			[COB_3] VARCHAR(100),
+			[INS3] VARCHAR(100),
+			[INS3_POL_NO] VARCHAR(100),
+			[INS3_SUBSCR_GROUP_ID] VARCHAR(100),
+			[INS3_GRP_NO] VARCHAR(100),
+			[INS3_PYMTS] MONEY,
+			[INS3_FIRST_PAID] SMALLDATETIME,
+			[INS3_BALANCE] MONEY,
+			[COB_4] VARCHAR(100),
+			[INS4] VARCHAR(100),
+			[INS4_POL_NO] VARCHAR(100),
+			[INS4_SUBSCR_GROUP_ID] VARCHAR(100),
+			[INS4_GRP_NO] VARCHAR(100),
+			[INS4_PYMTS] MONEY,
+			[INS4_FIRST_PAID] SMALLDATETIME,
+			[INS4_BALANCE] MONEY
+			)
+
+	INSERT INTO dbo.CUSTOM_INSURANCE_SM_3_NonUnit (
+		[PA-PT-NO-WOSCD],
+		[PA-PT-NO-SCD],
+		[PA-CTL-PAA-XFER-DATE],
+		[PA-UNIT-NO],
+		[PA-MED-REC-NO],
+		[PA-PT-NAME],
+		[ADMIT_DATE],
+		[DSCH_DATE],
+		[PA-UNIT-DATE],
+		[PA-ACCT-TYPE],
+		[COB_1],
+		[INS1],
+		[INS1_POL_NO],
+		[INS1_SUBSCR_GROUP_ID],
+		[INS1_GRP_NO],
+		[INS1_PYMTS],
+		[INS1_FIRST_PAID],
+		[INS1_BALANCE],
+		[COB_2],
+		[INS2],
+		[INS2_POL_NO],
+		[INS2_SUBSCR_GROUP_ID],
+		[INS2_GRP_NO],
+		[INS2_PYMTS],
+		[INS2_FIRST_PAID],
+		[INS2_BALANCE],
+		[COB_3],
+		[INS3],
+		[INS3_POL_NO],
+		[INS3_SUBSCR_GROUP_ID],
+		[INS3_GRP_NO],
+		[INS3_PYMTS],
+		[INS3_FIRST_PAID],
+		[INS3_BALANCE],
+		[COB_4],
+		[INS4],
+		[INS4_POL_NO],
+		[INS4_SUBSCR_GROUP_ID],
+		[INS4_GRP_NO],
+		[INS4_PYMTS],
+		[INS4_FIRST_PAID],
+		[INS4_BALANCE]
+		)
+	SELECT [PA-PT-NO-WOSCD],
+		[PA-PT-NO-SCD],
+		[PA-CTL-PAA-XFER-DATE],
+		[PA-UNIT-NO],
+		[PA-MED-REC-NO],
+		[PA-PT-NAME],
+		[ADMIT_DATE],
+		[DSCH_DATE],
+		[PA-UNIT-DATE],
+		[PA-ACCT-TYPE],
+		[COB_1],
+		[INS1],
+		[INS1_POL_NO],
+		[INS1_SUBSCR_GROUP_ID],
+		[INS1_GRP_NO],
+		[INS1_PYMTS],
+		[INS1_FIRST_PAID],
+		[INS1_BALANCE],
+		[COB_2],
+		[INS2],
+		[INS2_POL_NO],
+		[INS2_SUBSCR_GROUP_ID],
+		[INS2_GRP_NO],
+		[INS2_PYMTS],
+		[INS2_FIRST_PAID],
+		[INS2_BALANCE],
+		[COB_3],
+		[INS3],
+		[INS3_POL_NO],
+		[INS3_SUBSCR_GROUP_ID],
+		[INS3_GRP_NO],
+		[INS3_PYMTS],
+		[INS3_FIRST_PAID],
+		[INS3_BALANCE],
+		[COB_4],
+		[INS4],
+		[INS4_POL_NO],
+		[INS4_SUBSCR_GROUP_ID],
+		[INS4_GRP_NO],
+		[INS4_PYMTS],
+		[INS4_FIRST_PAID],
+		[INS4_BALANCE]
+	FROM [SMS].dbo.[CUSTOM_INSURANCE_SM_ALT]
+	WHERE (
+			[pa-unit-date] IS NULL
+			OR [pa-unit-no] = '0'
+			)
+END
+GO
+
+
+
+
+

@@ -21,6 +21,7 @@ Functions:
 Author: Steven P Sanderson II, MPH
 
 Purpose/Description
+	Run in batch 1
 	Create patient account view dbo.encounters_for_reporting_nonunit
 
 Revision History:
