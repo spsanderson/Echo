@@ -42,6 +42,6 @@ SET ANSI_WARNINGS ON
 
 BEGIN
 
-	EXECUTE dbo.c_covid_adt02order_sp
+	EXECUTE dbo.c_sms_encounters_for_reporting_sp
 
 END
