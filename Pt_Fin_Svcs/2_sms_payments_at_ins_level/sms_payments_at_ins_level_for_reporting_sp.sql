@@ -3,7 +3,7 @@ GO
 
 /*
 ***********************************************************************
-File: sms_payments_at_ins_level_forr_reporting_a_sp.sql
+File: sms_payments_at_ins_level_for_reporting_a_sp.sql
 
 Input Parameters:
 	none
