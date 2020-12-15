@@ -56,7 +56,7 @@ BEGIN
 			[Rank] VARCHAR(4) NULL
 			);
 
-	INSERT INTO dbo.[#SSI_Primary_Claim_Release_Date] (
+	INSERT INTO dbo.[SSI_Primary_Claim_Release_Date] (
 		[Pt_No],
 		[PA_Ctl_PAA_Xfer_Date],
 		[SSI_Last_Ins_Bill_Date],
@@ -68,7 +68,7 @@ BEGIN
 		RANK() OVER (
 			PARTITION BY b.[pa-pt-no-woscd] ORDER BY b.[pa-smart-date] DESC
 			) AS 'Rank'
-	FROM dbo.[#Encounters_For_Reporting_NonUnit] a
+	FROM dbo.[Encounters_For_Reporting_NonUnit] a
 	LEFT OUTER JOIN [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[Echo_Active].dbo.[AccountComments] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 		AND a.[PA-CTL-PAA-XFER-DATE] = b.[pa-ctl-paa-xfer-date]
 	WHERE RIGHT(RTRIM(b.[pa-smart-comment]), 3) IN ('PEH', 'PLH')
@@ -81,7 +81,7 @@ BEGIN
 		RANK() OVER (
 			PARTITION BY b.[pa-pt-no-woscd] ORDER BY b.[pa-smart-date] DESC
 			) AS 'Rank'
-	FROM dbo.[#Encounters_For_Reporting_NonUnit] a
+	FROM dbo.[Encounters_For_Reporting_NonUnit] a
 	LEFT OUTER JOIN [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[Echo_Archive].dbo.[AccountComments] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
 		AND a.[PA-CTL-PAA-XFER-DATE] = b.[pa-ctl-paa-xfer-date]
 	WHERE RIGHT(RTRIM(b.[pa-smart-comment]), 3) IN ('PEH', 'PLH')
