@@ -110,8 +110,8 @@ BEGIN
 		SUM(A.[PA-DTL-PROFESSIONAL-FEE]) AS 'TOT-PROF-FESS'
 	FROM [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[Echo_ACTIVE].dbo.[DetailInformation] a
 	INNER JOIN dbo.[Encounters_For_Reporting] b ON a.[pa-pt-no-woscd] = b.[pa-pt-no-woscd]
-		AND A.[PA-DTL-DATE] >= B.[START_UNIT_DATE]
-		AND A.[PA-DTL-DATE] <= B.[END_UNIT_DATE]
+		AND A.[PA-DTL-DATE] >= B.[START-UNIT-DATE]
+		AND A.[PA-DTL-DATE] <= B.[END-UNIT-DATE]
 		AND a.[pa-ctl-paa-xfer-date] = b.[pa-ctl-paa-xfer-date]
 	WHERE a.[pa-dtl-type-ind] IN ('7', '8', 'A', 'B')
 		AND A.[PA-DTL-DATE] > '2014-12-31 23:59:59.000'
