@@ -1,5 +1,88 @@
 USE [DSH_Southampton_2019]
 
+-- Make the insurance pivot table
+DROP TABLE IF EXISTS #ins_prio_tbl
+CREATE TABLE #ins_prio_tbl (
+	acct VARCHAR(12),
+	ins_name VARCHAR(255),
+	insurance_grouping VARCHAR(255),
+	calculated_priority VARCHAR(10),
+	rowid INT
+)
+
+INSERT INTO #ins_prio_tbl (acct, ins_name, insurance_grouping, calculated_priority, rowid)
+SELECT zzz.Acct#,
+	zzz.Ins_Name,
+	xxx.insurance_groupings,
+	ZZZ.[CALCULATED_PRIORITY],
+	[rn] = ROW_NUMBER() OVER(
+		PARTITION BY ZZZ.ACCT#, ZZZ.CALCULATED_PRIORITY
+		ORDER BY ZZZ.ACCT#
+	)
+FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+INNER JOIN DBO.[InsurancePlanListing] AS XXX ON ZZZ.Ins_Name = XXX.InsCode
+WHERE ZZZ.[Calculated_Priority] <= '5'
+--AND ZZZ.Acct# = '5238559';
+
+DELETE
+FROM #ins_prio_tbl
+WHERE rowid != 1;
+
+DROP TABLE IF EXISTS #ins_name_group_tbl
+CREATE TABLE #ins_name_group_tbl (
+	acct VARCHAR(12),
+	Primary_Ins_Name VARCHAR(255),
+	Primary_Ins_Grouping VARCHAR(255),
+	Secondary_Ins_Name VARCHAR(255),
+	Secondary_Ins_Grouping VARCHAR(255),
+	Tertiary_Ins_Name VARCHAR(255),
+	Tertiary_Ins_Grouping VARCHAR(255),
+	Quaternary_Ins_Name VARCHAR(255),
+	Quaternary_Ins_Grouping VARCHAR(255),
+	Quinary_Ins_Name VARCHAR(255),
+	Quinary_Ins_Grouping VARCHAR(255)
+)
+
+INSERT INTO #ins_name_group_tbl (
+	acct,
+	Primary_Ins_Name, Primary_Ins_Grouping,
+	Secondary_Ins_Name, Secondary_Ins_Grouping,
+	Tertiary_Ins_Name, Tertiary_Ins_Grouping,
+	Quaternary_Ins_Name, Quaternary_Ins_Grouping,
+	Quinary_Ins_Name, Quinary_Ins_Grouping
+)
+SELECT acct,
+MAX(pvtb.[1]) AS [Primary_Ins_Name],
+MAX(pvtb.[01]) AS [Primary_Ins_Grouping],
+MAX(PVTB.[2]) AS [Secondary_Ins_Name],
+MAX(PVTB.[02]) AS [Secondary_Ins_Grouping],
+MAX(PVTB.[3]) AS [Tertiary_Ins_Name],
+MAX(PVTB.[03]) AS [Tertiary_Ins_Grouping],
+MAX(PVTB.[4]) AS [Quaternary_Ins_Name],
+MAX(PVTB.[04]) AS [Quaternary_Ins_Grouping],
+MAX(PVTB.[5]) AS [Quinary_Ins_Name],
+MAX(PVTB.[05]) AS [Quinary_Ins_Grouping]
+FROM (
+SELECT acct,
+	ins_name,
+	insurance_grouping,
+	calculated_priority,
+	calculated_priorityb = '0' + cast(calculated_priority as varchar) 
+FROM #ins_prio_tbl
+) AS A
+
+PIVOT(
+	MAX(ins_name)
+	FOR calculated_priority IN ("1","2","3","4","5")
+) AS PVT
+
+PIVOT(
+	MAX(insurance_grouping)
+	FOR calculated_priorityb IN ("01","02","03","04","05")
+) AS PVTB
+GROUP BY ACCT;
+
+-- get data
 DROP TABLE IF EXISTS dbo.[SHH_DSH_CHARGES]
 GO
 
@@ -82,71 +165,81 @@ SELECT a.[Acct],
 	J.[PER_DIEM],
 	a.[SVC_Date],
 	a.[GL],
-	(
-		SELECT TOP 1 ZZZ.[Ins_Name]
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		WHERE ZZZ.[Calculated_Priority] = '1'
-			AND ZZZ.Acct# = A.ACCT
-		) AS [Primary_Ins_Name],
-	(
-		SELECT TOP 1 XXX.Insurance_Groupings
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		INNER JOIN DBO.[InsurancePlanListing] AS XXX ON ZZZ.Ins_Name = XXX.InsCode
-			AND ZZZ.Acct# = A.Acct
-			AND ZZZ.[Calculated_Priority] = '1'
-		) AS [Primary_Ins_Grouping],
-	(
-		SELECT TOP 1 ZZZ.[Ins_Name]
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		WHERE ZZZ.[Calculated_Priority] = '2'
-			AND ZZZ.Acct# = A.ACCT
-		) AS [Secondary_Ins_Name],
-	(
-		SELECT TOP 1 XXX.Insurance_Groupings
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		INNER JOIN DBO.InsurancePlanListing AS XXX ON ZZZ.Ins_Name = XXX.InsCode
-			AND ZZZ.Acct# = A.Acct
-			AND ZZZ.[Calculated_Priority] = '2'
-		) AS [Secondary_Ins_Grouping],
-	(
-		SELECT TOP 1 ZZZ.[Ins_Name]
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		WHERE ZZZ.[Calculated_Priority] = '3'
-			AND ZZZ.Acct# = A.ACCT
-		) AS [Tertiary_Ins_Name],
-	(
-		SELECT TOP 1 XXX.Insurance_Groupings
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		INNER JOIN DBO.InsurancePlanListing AS XXX ON ZZZ.Ins_Name = XXX.InsCode
-			AND ZZZ.Acct# = A.Acct
-			AND ZZZ.[Calculated_Priority] = '3'
-		) AS [Tertiary_Ins_Grouping],
-	(
-		SELECT TOP 1 ZZZ.[Ins_Name]
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		WHERE ZZZ.[Calculated_Priority] = '4'
-			AND ZZZ.Acct# = A.ACCT
-		) AS [Quaternary_Ins_Name],
-	(
-		SELECT TOP 1 XXX.Insurance_Groupings
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		INNER JOIN DBO.InsurancePlanListing AS XXX ON ZZZ.Ins_Name = XXX.InsCode
-			AND ZZZ.Acct# = A.Acct
-			AND ZZZ.[Calculated_Priority] = '4'
-		) AS [Quaternary_Ins_Grouping],
-	(
-		SELECT TOP 1 ZZZ.[Ins_Name]
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		WHERE ZZZ.[Calculated_Priority] = '5'
-			AND ZZZ.Acct# = A.ACCT
-		) AS [Quinary_Ins_Name],
-	(
-		SELECT TOP 1 XXX.Insurance_Groupings
-		FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
-		INNER JOIN DBO.InsurancePlanListing AS XXX ON ZZZ.Ins_Name = XXX.InsCode
-			AND ZZZ.Acct# = A.Acct
-			AND ZZZ.[Calculated_Priority] = '5'
-		) AS [Quinary_Ins_Grouping],
+	INS_TBL.Primary_Ins_Name,
+	INS_TBL.Primary_Ins_Grouping,
+	INS_TBL.Secondary_Ins_Name,
+	INS_TBL.Secondary_Ins_Grouping,
+	INS_TBL.Tertiary_Ins_Name,
+	INS_TBL.Tertiary_Ins_Grouping,
+	INS_TBL.Quaternary_Ins_Name,
+	INS_TBL.Quaternary_Ins_Grouping,
+	INS_TBL.Quinary_Ins_Name,
+	INS_TBL.Quinary_Ins_Grouping,
+	--(
+	--	SELECT TOP 1 ZZZ.[Ins_Name]
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	WHERE ZZZ.[Calculated_Priority] = '1'
+	--		AND ZZZ.Acct# = A.ACCT
+	--	) AS [Primary_Ins_Name],
+	--(
+	--	SELECT TOP 1 XXX.Insurance_Groupings
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	INNER JOIN DBO.[InsurancePlanListing] AS XXX ON ZZZ.Ins_Name = XXX.InsCode
+	--		AND ZZZ.Acct# = A.Acct
+	--		AND ZZZ.[Calculated_Priority] = '1'
+	--	) AS [Primary_Ins_Grouping],
+	--(
+	--	SELECT TOP 1 ZZZ.[Ins_Name]
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	WHERE ZZZ.[Calculated_Priority] = '2'
+	--		AND ZZZ.Acct# = A.ACCT
+	--	) AS [Secondary_Ins_Name],
+	--(
+	--	SELECT TOP 1 XXX.Insurance_Groupings
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	INNER JOIN DBO.InsurancePlanListing AS XXX ON ZZZ.Ins_Name = XXX.InsCode
+	--		AND ZZZ.Acct# = A.Acct
+	--		AND ZZZ.[Calculated_Priority] = '2'
+	--	) AS [Secondary_Ins_Grouping],
+	--(
+	--	SELECT TOP 1 ZZZ.[Ins_Name]
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	WHERE ZZZ.[Calculated_Priority] = '3'
+	--		AND ZZZ.Acct# = A.ACCT
+	--	) AS [Tertiary_Ins_Name],
+	--(
+	--	SELECT TOP 1 XXX.Insurance_Groupings
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	INNER JOIN DBO.InsurancePlanListing AS XXX ON ZZZ.Ins_Name = XXX.InsCode
+	--		AND ZZZ.Acct# = A.Acct
+	--		AND ZZZ.[Calculated_Priority] = '3'
+	--	) AS [Tertiary_Ins_Grouping],
+	--(
+	--	SELECT TOP 1 ZZZ.[Ins_Name]
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	WHERE ZZZ.[Calculated_Priority] = '4'
+	--		AND ZZZ.Acct# = A.ACCT
+	--	) AS [Quaternary_Ins_Name],
+	--(
+	--	SELECT TOP 1 XXX.Insurance_Groupings
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	INNER JOIN DBO.InsurancePlanListing AS XXX ON ZZZ.Ins_Name = XXX.InsCode
+	--		AND ZZZ.Acct# = A.Acct
+	--		AND ZZZ.[Calculated_Priority] = '4'
+	--	) AS [Quaternary_Ins_Grouping],
+	--(
+	--	SELECT TOP 1 ZZZ.[Ins_Name]
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	WHERE ZZZ.[Calculated_Priority] = '5'
+	--		AND ZZZ.Acct# = A.ACCT
+	--	) AS [Quinary_Ins_Name],
+	--(
+	--	SELECT TOP 1 XXX.Insurance_Groupings
+	--	FROM DBO.[DSH_Ins_Remit_self_pay] AS ZZZ
+	--	INNER JOIN DBO.InsurancePlanListing AS XXX ON ZZZ.Ins_Name = XXX.InsCode
+	--		AND ZZZ.Acct# = A.Acct
+	--		AND ZZZ.[Calculated_Priority] = '5'
+	--	) AS [Quinary_Ins_Grouping],
 	e.[Admit_Code], -- CAS 3-23-21
 	e.[Disch_Disp],
 	f.[Long_Description] AS 'Disch_Disp_Long_Desc',
@@ -167,6 +260,7 @@ LEFT OUTER JOIN [dbo].[ServiceCode] H ON A.[Service_Code] = H.[SERVICE_CODE] COL
 LEFT OUTER JOIN [dbo].[SHH_ChgCd_wICRs_RCCs] I ON I.[CPSI_CODE] = A.[Sum_Code]
 LEFT OUTER JOIN [dbo].[SHH_ChgCd_wICRs_Per_Diem] J ON J.[CPSI_CODE] = A.[Sum_Code]
 LEFT OUTER JOIN [dbo].[ChgCd_wCPSI_Category_Fixed] K ON K.[CPSI_CODE] = A.[Sum_Code]
+LEFT OUTER JOIN #ins_name_group_tbl AS INS_TBL ON A.Acct = INS_TBL.acct
 WHERE [Disch_Disp] != '1' --(TRANS TO STONY BROOK FOR INPATIENT CARE)
 	AND [Admit_Source] != '16' --(Transfer Stony Brook)
 	AND [CPSI_Category] IN ('ANCILLARY CHARGE', 'Room and Board Charge')
@@ -179,4 +273,6 @@ WHERE [Disch_Disp] != '1' --(TRANS TO STONY BROOK FOR INPATIENT CARE)
 		WHERE BBB.Stay_Type IN ('2', '3', '4')  -- (O/P) 
 			AND BBB.Admit_Code = 'P' --- (ER Police)
 		)
+	--AND A.Acct = '5141777'
 	-- END EDIT
+	-- 1,868,892
