@@ -882,6 +882,16 @@ SELECT a.[PA-PT-NO-WOSCD],
                     OR DI2.[DENIAL-IND] = '0'
                 )
             )
+            AND (
+                B.[PA-INS-PLAN] IS NOT NULL
+                AND LEFT(C.[PA-INS-PLAN], 1) != 'Y'
+                AND D.[PA-INS-PLAN] IS NOT NULL
+                AND E.[PA-INS-PLAN] IS NOT NULL
+                AND (
+                    DI1.[DENIAL-IND] = '0'
+                    OR DI2.[DENIAL-IND] = '0'
+                )
+            )
             -- END EDIT
 			THEN 'PRIMARY SELF PAY'
 		WHEN I.[INDICATOR] = 'PRIMARY OUT OF STATE MEDICAID'
@@ -943,6 +953,16 @@ SELECT a.[PA-PT-NO-WOSCD],
                     OR DI2.[DENIAL-IND] = '0'
                 )
             )
+            AND (
+                B.[PA-INS-PLAN] IS NOT NULL
+                AND LEFT(C.[PA-INS-PLAN], 1) != 'Y'
+                AND D.[PA-INS-PLAN] IS NOT NULL
+                AND E.[PA-INS-PLAN] IS NOT NULL
+                AND (
+                    DI1.[DENIAL-IND] = '0'
+                    OR DI2.[DENIAL-IND] = '0'
+                )
+            )
             -- END EDIT
 			THEN 'PRIMARY SELF PAY'
 
@@ -984,6 +1004,16 @@ SELECT a.[PA-PT-NO-WOSCD],
                     OR D.[PA-INS-PLAN] IS NULL
                     )
                 AND E.[PA-INS-PLAN] IS NULL
+                AND (
+                    DI1.[DENIAL-IND] = '0'
+                    OR DI2.[DENIAL-IND] = '0'
+                )
+            )
+            AND (
+                B.[PA-INS-PLAN] IS NOT NULL
+                AND LEFT(C.[PA-INS-PLAN], 1) != 'Y'
+                AND D.[PA-INS-PLAN] IS NOT NULL
+                AND E.[PA-INS-PLAN] IS NOT NULL
                 AND (
                     DI1.[DENIAL-IND] = '0'
                     OR DI2.[DENIAL-IND] = '0'
