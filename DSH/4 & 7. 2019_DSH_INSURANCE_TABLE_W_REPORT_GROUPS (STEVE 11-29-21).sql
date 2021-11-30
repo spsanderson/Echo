@@ -869,6 +869,19 @@ SELECT a.[PA-PT-NO-WOSCD],
 				)
             -- EDIT SPS 11/29/2021
             AND B.[PA-INS-PLAN] != '496'
+            AND(
+                B.[PA-INS-PLAN] = 'SELF_PAY'
+                AND LEFT(C.[PA-INS-PLAN], 1) IN ('B','C','G','M')
+                AND (
+                    LEFT(D.[PA-INS-PLAN], 1) IN ('B','P')
+                    OR D.[PA-INS-PLAN] IS NULL
+                    )
+                AND E.[PA-INS-PLAN] IS NULL
+                AND (
+                    DI1.[DENIAL-IND] = '0'
+                    OR DI2.[DENIAL-IND] = '0'
+                )
+            )
             -- END EDIT
 			THEN 'PRIMARY SELF PAY'
 		WHEN I.[INDICATOR] = 'PRIMARY OUT OF STATE MEDICAID'
@@ -917,6 +930,19 @@ SELECT a.[PA-PT-NO-WOSCD],
 			AND i.[indicator] = 'OTHER PRIMARY PAYER'
             -- EDIT SPS 11/29/2021
             AND B.[PA-INS-PLAN] != '496'
+            AND(
+                B.[PA-INS-PLAN] = 'SELF_PAY'
+                AND LEFT(C.[PA-INS-PLAN], 1) IN ('B','C','G','M')
+                AND (
+                    LEFT(D.[PA-INS-PLAN], 1) IN ('B','P')
+                    OR D.[PA-INS-PLAN] IS NULL
+                    )
+                AND E.[PA-INS-PLAN] IS NULL
+                AND (
+                    DI1.[DENIAL-IND] = '0'
+                    OR DI2.[DENIAL-IND] = '0'
+                )
+            )
             -- END EDIT
 			THEN 'PRIMARY SELF PAY'
 
@@ -950,6 +976,19 @@ SELECT a.[PA-PT-NO-WOSCD],
 				LEFT(G.[PA-INS-PLAN],1) NOT IN ('A','B','C','D','E','F','G','I','J','K','L','M','N','O','P','R','T','U','X','Y')
 				OR G.[PA-INS-PLAN] IS NULL
 				)
+            AND(
+                B.[PA-INS-PLAN] = 'SELF_PAY'
+                AND LEFT(C.[PA-INS-PLAN], 1) IN ('B','C','G','M')
+                AND (
+                    LEFT(D.[PA-INS-PLAN], 1) IN ('B','P')
+                    OR D.[PA-INS-PLAN] IS NULL
+                    )
+                AND E.[PA-INS-PLAN] IS NULL
+                AND (
+                    DI1.[DENIAL-IND] = '0'
+                    OR DI2.[DENIAL-IND] = '0'
+                )
+            )
 			THEN 'PRIMARY SELF PAY'
 		WHEN (
 				(
