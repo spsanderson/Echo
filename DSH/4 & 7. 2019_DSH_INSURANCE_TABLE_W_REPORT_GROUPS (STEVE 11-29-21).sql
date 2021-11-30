@@ -695,6 +695,9 @@ SELECT a.[PA-PT-NO-WOSCD],
 						)
 					)
 				)
+                -- EDIT SPS 11/29/2021
+                AND B.[PA-INS-PLAN] != '496'
+                -- END EDIT
 			THEN 'MEDICAID FFS DUAL ELIGIBLE'
 		-- EDIT 3/10/2021 STEVE
 		WHEN LEFT(b.[pa-ins-plan], 1) = 'H'
@@ -720,15 +723,24 @@ SELECT a.[PA-PT-NO-WOSCD],
 			THEN 'MEDICAID FFS DUAL ELIGIBLE'
 		-- EDIT 4/21/2021 SPS
 		WHEN LEFT(B.[PA-INS-PLAN], 1) NOT IN ('D','U')
+        -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+        -- END EDIT
             AND LEFT(C.[PA-INS-PLAN], 1) = 'D'
             AND LEFT(D.[PA-INS-PLAN], 1) = 'U'
             THEN 'MEDICAID FFS DUAL ELIGIBLE'
         WHEN LEFT(B.[PA-INS-PLAN], 1) NOT IN ('D','U')
+        -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+        -- END EDIT
             AND LEFT(C.[PA-INS-PLAN], 1) NOT IN ('D', 'U')
             AND LEFT(D.[PA-INS-PLAN], 1) = 'D'
             AND LEFT(E.[PA-INS-PLAN], 1) = 'U'
             THEN 'MEDICAID FFS DUAL ELIGIBLE'
         WHEN LEFT(B.[PA-INS-PLAN], 1) NOT IN ('D','U')
+        -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+        -- END EDIT
             AND LEFT(C.[PA-INS-PLAN], 1) = 'D'
             AND LEFT(D.[PA-INS-PLAN], 1) NOT IN ('D','U')
             AND LEFT(E.[PA-INS-PLAN], 1) = 'U'
@@ -741,6 +753,9 @@ SELECT a.[PA-PT-NO-WOSCD],
 			AND J.[2NDRY-MEDICARE-IND] = '0'
 			AND J.[2NDRY-OTHER-INS-IND] = '0'
 			AND J.[2NDRY-MEDICAID-MANAGED] = '0'
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
 			THEN 'PRIMARY MEDICAID MANAGED CARE'
 		-- EDIT 4/18/2021 SPS
 		WHEN LEFT(B.[PA-INS-PLAN], 1) = 'U'
@@ -778,12 +793,18 @@ SELECT a.[PA-PT-NO-WOSCD],
 				OR J.[2NDRY-OTHER-INS-IND] > '0'
 				OR J.[2NDRY-MEDICAID-MANAGED] <> '0'
 				)
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
 			THEN 'MEDICAID MANAGED CARE DUAL ELIGIBLE'
 		WHEN I.[INDICATOR] IN ('OTHER PRIMARY PAYER', 'PRIMARY MEDICARE')
 			AND (
 				J.[2NDRY-MEDICAID-MANAGED] > '0'
 				OR J.[2NDRY-MEDICAID-ELIGIBLE] > '0'
 				)
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
 			THEN 'MEDICAID MANAGED CARE DUAL ELIGIBLE'
         -- EDIT 3/16/2021
         WHEN B.[PA-INS-PLAN] = 'SELF_PAY'
@@ -810,6 +831,9 @@ SELECT a.[PA-PT-NO-WOSCD],
                 B.[PA-INS-PLAN] = 'SELF_PAY'
                 OR LEFT(B.[PA-INS-PLAN], 1) = 'H'
             )
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
 			AND LEFT(C.[PA-INS-PLAN], 1) = 'L'
 			THEN 'UN-GROUPED'
 		-- END EDIT
@@ -818,6 +842,9 @@ SELECT a.[PA-PT-NO-WOSCD],
             B.[PA-INS-PLAN] = 'SELF_PAY'
             OR LEFT(B.[PA-INS-PLAN], 1) = 'H'
         )
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
             AND LEFT(C.[PA-INS-PLAN], 1) IN ('P','J')
             THEN 'UN-GROUPED'
         -- END EDIT
@@ -840,6 +867,9 @@ SELECT a.[PA-PT-NO-WOSCD],
 				I.INDICATOR = 'PRIMARY SELF PAY'
 				OR I.INDICATOR IS NULL
 				)
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
 			THEN 'PRIMARY SELF PAY'
 		WHEN I.[INDICATOR] = 'PRIMARY OUT OF STATE MEDICAID'
 			AND j.[2NDRY-MEDICAID-ELIGIBLE] = '0'
@@ -848,6 +878,9 @@ SELECT a.[PA-PT-NO-WOSCD],
 			AND J.[2NDRY-MEDICARE-IND] = '0'
 			AND J.[2NDRY-OTHER-INS-IND] = '0'
 			AND J.[2NDRY-MEDICAID-MANAGED] = '0'
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
 			THEN 'PRIMARY OUT OF STATE MEDICAID'
 		WHEN I.[INDICATOR] = 'PRIMARY OUT OF STATE MEDICAID'
 			AND (
@@ -857,6 +890,9 @@ SELECT a.[PA-PT-NO-WOSCD],
 				OR J.[2NDRY-MEDICARE-IND] > '0'
 				OR J.[2NDRY-OTHER-INS-IND] > '0'
 				)
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
 			THEN 'DUAL ELIGIBLE OUT OF STATE MEDICAID'
 		WHEN I.[INDICATOR] IN ('OTHER PRIMARY PAYER', 'PRIMARY MEDICARE')
 			AND (
@@ -864,6 +900,9 @@ SELECT a.[PA-PT-NO-WOSCD],
 				AND J.[2NDRY-MEDICAID-ELIGIBLE] = '0'
 				AND J.[2NDRY-MEDICAID-OUT-OF-STATE-IND] > '0'
 				)
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
 			THEN 'DUAL ELIGIBLE OUT OF STATE MEDICAID'
 			
 			--BELOW LINES WERE ADDED SO THAT TEACHING ENCOUNTERS NOT PART OF ABOVE REPORTING GROUPS
@@ -876,6 +915,9 @@ SELECT a.[PA-PT-NO-WOSCD],
 				OR E.[pa-ins-plan] = 'T01'
 				)
 			AND i.[indicator] = 'OTHER PRIMARY PAYER'
+            -- EDIT SPS 11/29/2021
+            AND B.[PA-INS-PLAN] != '496'
+            -- END EDIT
 			THEN 'PRIMARY SELF PAY'
 
 			--BELOW LINES WERE ADDED SO THAT ADAP ENCOUNTERS NOT PART OF ABOVE REPORTING GROUPS
