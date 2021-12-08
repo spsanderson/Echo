@@ -1010,7 +1010,9 @@ SELECT a.[PA-PT-NO-WOSCD],
 				LEFT(G.[PA-INS-PLAN],1) NOT IN ('A','B','C','D','E','F','G','I','J','K','L','M','N','O','P','R','T','U','X','Y')
 				OR G.[PA-INS-PLAN] IS NULL
 				)
-            AND(
+            -- EDIT SPS 12/07/2021
+            OR (
+            -- END EDIT
                 B.[PA-INS-PLAN] = 'SELF_PAY'
                 AND LEFT(C.[PA-INS-PLAN], 1) IN ('B','C','G','M')
                 AND (
