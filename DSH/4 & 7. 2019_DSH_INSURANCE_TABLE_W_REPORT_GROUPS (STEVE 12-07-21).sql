@@ -952,9 +952,9 @@ SELECT a.[PA-PT-NO-WOSCD],
 				OR E.[pa-ins-plan] = 'T01'
 				)
 			AND i.[indicator] = 'OTHER PRIMARY PAYER'
-            -- EDIT SPS 11/29/2021
+            -- EDIT SPS 12/07/2021
             AND B.[PA-INS-PLAN] != '496'
-            AND(
+            OR (
                 B.[PA-INS-PLAN] = 'SELF_PAY'
                 AND LEFT(C.[PA-INS-PLAN], 1) IN ('B','C','G','M')
                 AND (
