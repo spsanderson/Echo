@@ -1,0 +1,143 @@
+-- All the encounters we want to see data on - Medicare Prim Caid Secondary (Medicare Dual Eligible)
+use [DSH_2019]
+SELECT DISTINCT [pa-pt-no-scd]
+, [pa-pt-no-woscd]
+INTO #TEMPA
+FROM [DSH_2019].[dbo].[DSH_INSURANCE_TABLE_W_REPORT_GROUPS]
+WHERE (
+		[PRIMARY-TYPE] = 'PRIMARY MEDICARE'
+		AND (
+			[2NDRY-MEDICAID-FFS] != '0'
+			OR [2NDRY-MEDICAID-ELIGIBLE] != '0'
+			OR [2NDRY-MEDICAID-PENDING-IND] != '0'
+			OR [2NDRY-MEDICAID-OUT-OF-STATE-IND] != '0'
+			)
+		)
+	AND [DENIAL-IND] = '0'
+	AND [REPORTING GROUP] != 'UN-GROUPED';
+
+
+-----
+
+-- These records pull up the Medicaid Payments for Medicare Prim Caid Secondary encounters (Medicare Dual Elibible)
+SELECT B.[PA-PT-NO-WOSCD],
+	B.[PA-PT-NO-SCD],
+	B.[type],
+	CASE 
+		WHEN B.[PA-UNIT-NO] IS NULL
+			THEN NULL
+		ELSE CAST(B.[PA-DTL-UNIT-DATE] AS DATE)
+		END AS [PA-DTL-UNIT-DATE],
+	B.[unit-date],
+	SUM(B.[TOT-PAYMENTS]) AS [TOTAL-PAYMENTS]
+INTO #TEMPB
+FROM [DSH_2019].[dbo].[DSH_Payments] AS B
+INNER JOIN #TEMPA AS A
+ON B.[PA-PT-NO-SCD] = A.[PA-PT-NO-SCD]
+	AND B.[PA-PT-NO-WOSCD] = A.[PA-PT-NO-WOSCD]
+WHERE LTRIM(RTRIM(B.[PA-DTL-SVC-CD])) = '108084'
+GROUP BY B.[PA-PT-NO-WOSCD],
+	B.[PA-PT-NO-SCD],
+	B.[type],
+	B.[PA-UNIT-NO],
+	B.[PA-DTL-UNIT-DATE],
+	B.[unit-date],
+	B.[PA-DTL-SVC-CD];
+
+-- These records pull up the Non Medicaid Payments for Medicare Prim Caid Secondary encounters (Medicare Dual Eligible)
+SELECT C.[PA-PT-NO-WOSCD],
+	C.[PA-PT-NO-SCD],
+	C.[type],
+	CASE 
+		WHEN C.[PA-UNIT-NO] IS NULL
+			THEN NULL
+		ELSE CAST(C.[PA-DTL-UNIT-DATE] AS DATE)
+		END AS [PA-DTL-UNIT-DATE],
+	C.[UNIT-DATE],
+	SUM(C.[TOT-PAYMENTS]) AS [TOTAL-PAYMENTS]
+INTO #TEMPC
+FROM [DSH_2019].[dbo].[DSH_Payments] AS C
+INNER JOIN #TEMPA AS A
+ON C.[PA-PT-NO-SCD] = A.[PA-PT-NO-SCD]
+	AND C.[PA-PT-NO-WOSCD] = A.[PA-PT-NO-WOSCD]
+WHERE LTRIM(RTRIM(C.[PA-DTL-SVC-CD])) != '108084'
+GROUP BY C.[PA-PT-NO-WOSCD],
+	C.[PA-PT-NO-SCD],
+	C.[type],
+	C.[PA-UNIT-NO],
+	C.[PA-DTL-UNIT-DATE],
+	C.[unit-date],
+	C.[PA-DTL-SVC-CD];
+
+-----
+-- Union A and B together as there are accounts in A that are not in B and vice versa
+SELECT A.*
+INTO #TEMPD
+FROM (
+	SELECT [PA-PT-NO-WOSCD],
+		[PA-PT-NO-SCD],
+		[TYPE],
+		CAST([UNIT-DATE] AS DATE) AS [UNIT-DATE],
+		[TOTAL-PAYMENTS],
+		'TOT-MEDICARE-DUAL-ELIGIBLE-ENCOUNTERS-MEDICAID-SECONDARY-PAYMENTS' AS [Table]
+	FROM #TEMPB
+	
+	UNION ALL
+	
+	SELECT [PA-PT-NO-WOSCD],
+		[PA-PT-NO-SCD],
+		[TYPE],
+		CAST([UNIT-DATE] AS DATE) AS [UNIT-DATE],
+		[TOTAL-PAYMENTS],
+		'TOT-MEDICARE-DUAL-ELIGIBLE-PAYMENTS-WO-MEDICAID-SECONDARY-PMT' AS [Table]
+	FROM #TEMPC
+	) A;
+
+
+-- Pull it all together
+SELECT PVT.*
+, (
+	PVT.[TOT-MEDICARE-DUAL-ELIGIBLE-PAYMENTS-WO-MEDICAID-SECONDARY-PMT] 
+	+ PVT.[TOT-MEDICARE-DUAL-ELIGIBLE-ENCOUNTERS-MEDICAID-SECONDARY-PAYMENTS]
+) AS [TOTAL-PAYMENTS]
+FROM (
+	SELECT D.[TYPE],
+		D.[Table] AS [TableLabel],
+		ISNULL(D.[TOTAL-PAYMENTS], 0) [Payments]
+	FROM #TEMPD AS D
+    --where [pa-pt-no-woscd] = '1010595358' 
+
+	) A
+PIVOT(SUM([Payments]) FOR TableLabel IN ([TOT-MEDICARE-DUAL-ELIGIBLE-ENCOUNTERS-MEDICAID-SECONDARY-PAYMENTS], [TOT-MEDICARE-DUAL-ELIGIBLE-PAYMENTS-WO-MEDICAID-SECONDARY-PMT])) PVT
+;
+
+SELECT *
+FROM #TEMPA
+--where [pa-pt-no-woscd] = '1010595358'  
+;
+
+SELECT *
+FROM #TEMPB
+--where [pa-pt-no-woscd] = '1010595358'  
+;
+
+SELECT *
+FROM #TEMPC
+--where [pa-pt-no-woscd] = '1010595358'  
+;
+
+SELECT *
+FROM #TEMPD
+--where [pa-pt-no-woscd] = '1010595358'  
+;
+
+
+-----
+
+DROP TABLE #TEMPA;
+
+DROP TABLE #TEMPB;
+
+DROP TABLE #TEMPC;
+
+DROP TABLE #TEMPD;
