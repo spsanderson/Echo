@@ -155,10 +155,10 @@ INNER JOIN Chains AS B ON A.Pt_NO = B.Pt_NO
 LEFT JOIN ChainNumber AS C ON A.Pt_NO = c.Pt_NO
 	AND A.File_Creation_Date = c.File_Creation_Date
 	AND A.Seq_No = C.Seq_No
-WHERE A.Pt_NO IN ('10213503617', '10224846559', '10208688654', '10229456560')
-ORDER BY A.Pt_NO,
-	A.Seq_No,
-	A.File_Creation_Date;
+--WHERE A.Pt_NO IN ('')
+--ORDER BY A.Pt_NO,
+--	A.Seq_No,
+--	A.File_Creation_Date;
 GO
 
 
