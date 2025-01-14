@@ -1,6 +1,6 @@
 USE [SMS]
 GO
-/****** Object:  StoredProcedure [dbo].[c_tableau_nyag_sp]    Script Date: 11/27/2024 8:40:54 AM ******/
+/****** Object:  StoredProcedure [dbo].[c_tableau_nyag_sp]    Script Date: 1/14/2025 1:39:29 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -54,6 +54,9 @@ BEGIN
 	2024-04-17	v5			Added logic for ins/patient payments
 	2024-04-18	v7			Added logic for IP/OP info in base table
 	2024-11-27	v8			Changed inventory from monthly to weekly
+	2024-12-31	v9			Changed logic to use the times with table for
+							the nyag payments tbl
+	2025-01-14	v10			Fix inventory logic to use the min/max date
 	************************************************************************/	
 	
 	DROP TABLE IF EXISTS dbo.c_tableau_nyag_base_tbl;
@@ -1041,16 +1044,17 @@ BEGIN
 
 	-- Make sure we are only getting the records of interest for where an account is with NYAG
 	DROP TABLE IF EXISTS #WITH_NYAG_TBL
-	SELECT *,
+	SELECT pt_no,
+		pa_smart_date,
+		next_event_date,
 		[partion_number] = ROW_NUMBER() OVER (
 			PARTITION BY pt_no ORDER BY pt_no,
 				event_number
 			)
 	INTO #WITH_NYAG_TBL
-	FROM dbo.c_tableau_nyag_base_tbl
+	FROM dbo.c_tableau_times_with_nyag_tbl
 	WHERE pt_rep_description = 'ASSIGNED';
-	
-	
+
 	CREATE TABLE dbo.c_tableau_nyag_payments_tbl(
 		c_tableau_nyag_payments_tblId INT IDENTITY(1,1) NOT NULL PRIMARY KEY, -- primary key column
 		pt_no VARCHAR(24),
@@ -1113,8 +1117,8 @@ BEGIN
 	DECLARE @ENDDATE AS DATE;
 	
 	SET @TODAY = GETDATE();
-	SET @STARTDATE = (SELECT EOMONTH(MIN(pa_smart_date)) FROM sms.dbo.c_tableau_times_with_nyag_tbl);
-	SET @ENDDATE = (SELECT CONVERT(date,dateadd(d,-(day(getdate())),getdate()),106));
+	SET @STARTDATE = (SELECT MIN(pa_smart_date) FROM sms.dbo.c_tableau_times_with_nyag_tbl);
+	SET @ENDDATE = (SELECT MAX(pa_smart_date) FROM sms.dbo.c_tableau_times_with_nyag_tbl);
 	
 	DROP TABLE IF EXISTS #inventory;
 	

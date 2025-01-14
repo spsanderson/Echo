@@ -1,6 +1,6 @@
 USE [SMS]
 GO
-/****** Object:  StoredProcedure [dbo].[c_tableau_kopp_sp]    Script Date: 11/27/2024 8:22:34 AM ******/
+/****** Object:  StoredProcedure [dbo].[c_tableau_kopp_sp]    Script Date: 1/14/2025 12:31:13 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -60,6 +60,10 @@ BEGIN
 							gl_no in (102, 103)
 							AND ins_plan_no = 0
 	2024-11-27	v5			Changed inventory from monthly to weekly
+	2024-12-31	v6			Update logic to use the times_with_vendor table
+							in order to capture proper balances/transactions.
+	2025-01-14	v8			Fix inventory logic to start and stop at min and max
+							dates of the inventory.
 	************************************************************************/
 
 	-- Create the table in the specified schema
@@ -106,6 +110,14 @@ BEGIN
 	WHERE [PA-SMART-COMMENT] LIKE '%PATIENT REP%'
 	) AS A;
 
+	-- Add records from table where accounts went to zero
+	DROP TABLE IF EXISTS #Zero_Bal_Tbl;
+	SELECT pt_no,
+		zero_date,
+		pt_rep = '782'
+	INTO #Zero_Bal_Tbl
+	FROM SMS.dbo.c_kopp_zero_bal_date_one_time_tbl
+
 	-- Drop the records if the only pt_rep on an account is 000
 	-- Make a table of the records to exclude
 	DROP TABLE IF EXISTS #Exclude_tbl;
@@ -125,6 +137,11 @@ BEGIN
 	DELETE
 	FROM #PTRep_tbl 
 	WHERE pt_rep NOT IN ('780','781','782','783');
+
+	-- Insert kopp zero bal records into table.
+	INSERT INTO #PTRep_tbl
+	SELECT *
+	FROM #Zero_Bal_Tbl;
 
 	-- Modify the PTRep table to add columns for pt_rep_description and system_process
 	DROP TABLE IF EXISTS #PTRepFinal_tbl;
@@ -148,9 +165,9 @@ BEGIN
 	-- Make comment codes table
 
 	DECLARE @SysTable Table(
-	Comment_Code VARCHAR(255),
-	System_Process VARCHAR (MAX)
-)
+		Comment_Code VARCHAR(255),
+		System_Process VARCHAR (MAX)
+	)
 
 	INSERT INTO @SysTable
 	VALUES
@@ -777,15 +794,17 @@ BEGIN
 
 	-- Make sure we are only getting the records of interest for where an account is with kopp
 	DROP TABLE IF EXISTS #WITH_KOPP_TBL
-		SELECT *,
+		SELECT pt_no,
+			pa_smart_date,
+			next_event_date,
 			[partion_number] = ROW_NUMBER() OVER (
 				PARTITION BY pt_no ORDER BY pt_no,
 					event_number
 				)
 		INTO #WITH_KOPP_TBL
-		FROM dbo.c_tableau_kopp_base_tbl
+		FROM dbo.c_tableau_times_with_kopp_tbl
 		WHERE pt_rep_description = 'WITH KOPP';
-
+		 
     CREATE TABLE dbo.c_tableau_kopp_payments_tbl(
 		c_tableau_kopp_payments_tblId INT IDENTITY(1,1) NOT NULL PRIMARY KEY, -- primary key column
 		pt_no VARCHAR(24),
@@ -842,8 +861,8 @@ BEGIN
 	DECLARE @ENDDATE AS DATE;
 
 	SET @TODAY = GETDATE();
-	SET @STARTDATE = (SELECT EOMONTH(MIN(pa_smart_date)) FROM sms.dbo.c_tableau_times_with_kopp_tbl);
-	SET @ENDDATE = (SELECT EOMONTH(MAX(pa_smart_date)) FROM sms.dbo.c_tableau_times_with_kopp_tbl);
+	SET @STARTDATE = (SELECT MIN(pa_smart_date) FROM sms.dbo.c_tableau_times_with_kopp_tbl);
+	SET @ENDDATE = (SELECT MAX(pa_smart_date) FROM sms.dbo.c_tableau_times_with_kopp_tbl);
 
 	WITH dates AS (
 		SELECT @STARTDATE AS dte

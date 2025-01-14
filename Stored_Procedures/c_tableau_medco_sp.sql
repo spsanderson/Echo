@@ -1,6 +1,6 @@
 USE [SMS]
 GO
-/****** Object:  StoredProcedure [dbo].[c_tableau_medco_sp]    Script Date: 11/27/2024 8:38:45 AM ******/
+/****** Object:  StoredProcedure [dbo].[c_tableau_medco_sp]    Script Date: 1/14/2025 12:57:37 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -61,9 +61,16 @@ BEGIN
 							Changed the way payments are calculated when with
 							medco and returned from medco.  This resulted in
 							an extra $1 million in payments.
-	2023-12-22 v4			Update del_flag logic in #DuplicateEvents_tbl
+	2023-12-22	v4			Update del_flag logic in #DuplicateEvents_tbl
 							Update before and after vendor balance logic
 	2024-11-27	v5			Changed inventory from monthly to weekly
+	2024-12-31	v6			Change logic for the c_tableau_medco_payments_tbl to only
+							include payments that are relevant to the report
+							by using the times with table instead of the base
+							tabel. This will prevent us from getting payments
+							that are not relevant to the report.
+	2025-01-14	v7			Fix inventory logic to start and end at min, max
+							inventory date.
 	************************************************************************/
 
 	-- Create the table in the specified schema
@@ -785,13 +792,15 @@ BEGIN
 
 	-- Make sure we are only getting the records of interest for where an account is with medco
 	DROP TABLE IF EXISTS #WITH_medco_TBL
-		SELECT *,
+		SELECT pt_no,
+			pa_smart_date,
+			next_event_date,
 			[partion_number] = ROW_NUMBER() OVER (
 				PARTITION BY pt_no ORDER BY pt_no,
 					event_number
 				)
 		INTO #WITH_medco_TBL
-		FROM dbo.c_tableau_medco_base_tbl
+		FROM dbo.c_tableau_times_with_medco_tbl
 		WHERE pt_rep_description = 'WITH MEDCO';
 
     CREATE TABLE dbo.c_tableau_medco_payments_tbl(
@@ -847,8 +856,8 @@ BEGIN
 	DECLARE @ENDDATE AS DATE;
 
 	SET @TODAY = GETDATE();
-	SET @STARTDATE = (SELECT EOMONTH(MIN(pa_smart_date)) FROM sms.dbo.c_tableau_times_with_medco_tbl);
-	SET @ENDDATE = (SELECT EOMONTH(MAX(pa_smart_date)) FROM sms.dbo.c_tableau_times_with_medco_tbl);
+	SET @STARTDATE = (SELECT MIN(pa_smart_date) FROM sms.dbo.c_tableau_times_with_medco_tbl);
+	SET @ENDDATE = (SELECT MAX(pa_smart_date) FROM sms.dbo.c_tableau_times_with_medco_tbl);
 
 	WITH dates AS (
 		SELECT @STARTDATE AS dte

@@ -1,6 +1,6 @@
 USE [SMS]
 GO
-/****** Object:  StoredProcedure [dbo].[c_tableau_rtr_sp]    Script Date: 11/27/2024 8:46:01 AM ******/
+/****** Object:  StoredProcedure [dbo].[c_tableau_rtr_sp]    Script Date: 1/14/2025 1:45:48 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -54,7 +54,10 @@ BEGIN
 	2024-02-29	v5			Updated comment codes
 	2024-04-17	v6			Added logic for ins/patient payments
 	2024-04-18	v7			Added logic for IP/OP info in base table
-	2024-11-27	v8			Changed inventory from monthly to weekly leve.
+	2024-12-31	v8			Changed logic for the payments with table to use
+							the times with table
+	2025-01-14	v9			Fix the inventory date logic to use min/max
+							pa_smart_comment
 	************************************************************************/
 	
 	DROP TABLE IF EXISTS dbo.c_tableau_rtr_base_tbl;
@@ -877,13 +880,15 @@ BEGIN
 
 	-- Make sure we are only getting the records of interest for where an account is with RTR
 	DROP TABLE IF EXISTS #WITH_RTR_TBL;
-	SELECT *,
+	SELECT pt_no,
+		pa_smart_date,
+		next_event_date,
 		[partion_number] = ROW_NUMBER() OVER (
 			PARTITION BY pt_no ORDER BY pt_no,
 				event_number
 			)
 	INTO #WITH_RTR_TBL
-	FROM dbo.c_tableau_rtr_base_tbl
+	FROM dbo.c_tableau_times_with_rtr_tbl
 	WHERE pt_rep_description = 'ASSIGNED';
 	
 	
@@ -948,8 +953,8 @@ BEGIN
 	DECLARE @ENDDATE AS DATE;
 	
 	SET @TODAY = GETDATE();
-	SET @STARTDATE = (SELECT EOMONTH(MIN(pa_smart_date)) FROM sms.dbo.c_tableau_times_with_rtr_tbl);
-	SET @ENDDATE = (SELECT CONVERT(date,dateadd(d,-(day(getdate())),getdate()),106));
+	SET @STARTDATE = (SELECT MIN(pa_smart_date) FROM sms.dbo.c_tableau_times_with_rtr_tbl);
+	SET @ENDDATE = (SELECT MAX(pa_smart_date) FROM sms.dbo.c_tableau_times_with_rtr_tbl);
 	
 	DROP TABLE IF EXISTS #inventory;
 	
@@ -958,7 +963,7 @@ BEGIN
 	
 	       UNION ALL
 	
-	       SELECT DATEADD(WEEK, 1, dte)
+	       SELECT EOMONTH(DATEADD(MONTH, 1, dte))
 	       FROM dates
 	       WHERE dte < @ENDDATE
 	)
@@ -974,7 +979,7 @@ BEGIN
 	              ) AS [vendor_inventory]
 	INTO #inventory
 	FROM dates AS A
-	LEFT JOIN sms.dbo.c_tableau_times_with_rtr_tbl AS B ON B.pa_smart_date <= DATEADD(WEEK, 1, A.DTE)
+	LEFT JOIN sms.dbo.c_tableau_times_with_rtr_tbl AS B ON B.pa_smart_date <= DATEADD(MONTH, 1, A.DTE)
 	       AND ISNULL(B.next_event_date, GETDATE()) >= A.dte
 	WHERE A.dte <= @ENDDATE
 	GROUP BY A.dte
@@ -989,4 +994,172 @@ BEGIN
 		SELECT *
 		FROM #inventory;
 
+--------------------------------------------------------------------------------------------------------------
+--					FIRST/LAST TOUCH STORED PROCEDURE BEGINS												--
+--------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------
+--										REFERRAL AND RETURN DATES											--
+--------------------------------------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS #REFERRAL_RETURN;
+SELECT
+	PT_NO,
+	pa_smart_date AS [Referral Date],
+	next_event_date AS [Return Date],
+	WITH_VENDOR_NUMBER AS [Times With RTR],
+	CASE
+		WHEN next_event_date IS NULL THEN 'NOT RETURNED'
+		ELSE 'RETURNED'
+	END AS [Return Status]
+	INTO #REFERRAL_RETURN
+FROM SMS.dbo.c_tableau_times_with_rtr_tbl
+
+--------------------------------------------------------------------------------------------------------------
+--										SERVICE CODE AND DATES   											--
+--------------------------------------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS #COMMENT_ACTIVITY;
+SELECT
+	PT_NO,
+	COMMENT AS ACTIVITY,
+	Svc_Date AS 'Activity Date',
+	[TYPE] = 'COMMENT'
+	INTO #COMMENT_ACTIVITY
+FROM [SMS].[dbo].[Vendor_Returns_RTR_KOPP_comments] 
+WHERE Vendor LIKE 'RTR'
+	AND Comment LIKE '[0-9][0-9]:[0-9][0-9]%';
+
+DROP TABLE IF EXISTS #PAYMENT_ACTIVITY;
+SELECT
+	PT_NO,
+	[PA-DTL-CHG-AMT] AS ACTIVITY,
+	[PA-DTL-DATE] AS 'Activity Date',
+	[TYPE] = 'PAYMENT'
+	INTO #PAYMENT_ACTIVITY
+FROM SMS.DBO.Payments_Adjustments_For_Reporting
+WHERE
+	DTL_Type_Ind = '1'
+	AND GL_NO NOT IN ('102', '103');
+	
+DROP TABLE IF EXISTS #ACTIVITY;
+SELECT
+	PT_NO,
+	[Activity Date],
+	[TYPE]
+	INTO #ACTIVITY
+FROM #COMMENT_ACTIVITY
+UNION ALL
+SELECT
+	PT_NO,
+	[Activity Date],
+	[TYPE]
+FROM #PAYMENT_ACTIVITY;
+
+--------------------------------------------------------------------------------------------------------------
+--										FINAL TABLE															--
+--------------------------------------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS #FINAL;
+SELECT
+	R.Pt_No,
+	R.[Referral Date],
+	R.[Return Date],
+	MIN(CASE WHEN S.[Activity Date] > R.[Referral Date] AND (R.[Return Date] IS NULL OR S.[Activity Date] < R.[Return Date]) THEN S.[Activity Date] END) AS [FIRST TOUCH AFTER REFERRAL],
+	MAX(CASE WHEN S.[Activity Date] > R.[Referral Date] AND R.[Return Status] = 'RETURNED' AND S.[Activity Date] < R.[Return Date] THEN S.[Activity Date] END) AS [LAST TOUCH BEFORE RETURN],
+	MAX(CASE WHEN S.[Activity Date] > R.[Referral Date] AND R.[Return Status] = 'NOT RETURNED' THEN S.[Activity Date] END) AS [LAST TOUCH WITHOUT RETURN],
+	R.[Times With RTR],
+	[Return Status],
+	[RunTime] = CAST(GETDATE() AS SMALLDATETIME)
+	INTO #FINAL
+FROM #REFERRAL_RETURN R
+LEFT JOIN #ACTIVITY S ON R.pt_no = S.PT_NO
+GROUP BY R.pt_no, R.[Referral Date], R.[Return Date], R.[Times With RTR], [Return Status]
+
+DROP TABLE IF EXISTS #FINAL2
+SELECT
+	pt_no,
+	[Referral Date] AS [referral_date],
+	[Return Date] AS [return_date],
+	[FIRST TOUCH AFTER REFERRAL] AS [first_touch_after_referral],
+	CASE
+		WHEN [LAST TOUCH BEFORE RETURN] IS NULL AND [Return Status] = 'RETURNED' AND [FIRST TOUCH AFTER REFERRAL] IS NULL THEN [Return Date]
+		ELSE [LAST TOUCH BEFORE RETURN]
+	END AS [last_touch_before_return],
+	[LAST TOUCH WITHOUT RETURN] AS [last_touch_without_return],
+	DATEDIFF(DAY, [Referral Date], [FIRST TOUCH AFTER REFERRAL]) AS [first_touch_relative_to_referral_date],
+	DATEDIFF(DAY, [LAST TOUCH WITHOUT RETURN], GETDATE()) AS [last_touch_relative_to_today],
+	DATEDIFF(DAY, [LAST TOUCH BEFORE RETURN], [Return Date]) AS [last_touch_relative_to_return_date],
+	[if_not_touched] = CASE
+							WHEN [Return Status] = 'NOT RETURNED' AND [FIRST TOUCH AFTER REFERRAL] IS NULL THEN 'YES'
+							ELSE 'NO'
+						END,
+	[Times With RTR] AS [times_with_rtr],
+	[Return Status] AS [return_status],
+	[RunTime] AS [runtime]
+	INTO #FINAL2
+FROM #FINAL
+
+DROP TABLE IF EXISTS [SMS].[DBO].[c_rtr_first_last_touch_tbl]
+SELECT
+	pt_no,
+	referral_date,
+	return_date,
+	first_touch_after_referral,
+	last_touch_before_return,
+	last_touch_without_return,
+	case
+		when [first_touch_relative_to_referral_date] between 0 and 30 then '30 Days'
+		when [first_touch_relative_to_referral_date] between 31 and 60 then '60 Days'
+		when [first_touch_relative_to_referral_date] between 61 and 90 then '90 Days'
+		when [first_touch_relative_to_referral_date] between 91 and 120 then '120 Days'
+		when [first_touch_relative_to_referral_date] between 121 and 150 then '150 Days'
+		when [first_touch_relative_to_referral_date] between 151 and 180 then '180 Days'
+		when [first_touch_relative_to_referral_date] between 211 and 210 then '210 Days'
+		when [first_touch_relative_to_referral_date] between 241 and 240 then '240 Days'
+		when [first_touch_relative_to_referral_date] between 271 and 270 then '270 Days'
+		when [first_touch_relative_to_referral_date] between 301 and 300 then '300 Days'
+		when [first_touch_relative_to_referral_date] between 301 and 330 then '330 Days'
+		when [first_touch_relative_to_referral_date] between 331 and 365 then '365 Days'
+		when [first_touch_relative_to_referral_date] > 366 then '365+ Days' 
+	end as [first_touch_relative_to_referral_date_age_bucket],
+	case
+		when last_touch_relative_to_today between 0 and 30 then '30 Days'
+		when last_touch_relative_to_today between 31 and 60 then '60 Days'
+		when last_touch_relative_to_today between 61 and 90 then '90 Days'
+		when last_touch_relative_to_today between 91 and 120 then '120 Days'
+		when last_touch_relative_to_today between 121 and 150 then '150 Days'
+		when last_touch_relative_to_today between 151 and 180 then '180 Days'
+		when last_touch_relative_to_today between 211 and 210 then '210 Days'
+		when last_touch_relative_to_today between 241 and 240 then '240 Days'
+		when last_touch_relative_to_today between 271 and 270 then '270 Days'
+		when last_touch_relative_to_today between 301 and 300 then '300 Days'
+		when last_touch_relative_to_today between 301 and 330 then '330 Days'
+		when last_touch_relative_to_today between 331 and 365 then '365 Days'
+		when last_touch_relative_to_today > 366 then '365+ Days' 
+	end as [last_touch_relative_to_today_age_bucket],
+	case
+		when last_touch_relative_to_return_date between 0 and 30 then '30 Days'
+		when last_touch_relative_to_return_date between 31 and 60 then '60 Days'
+		when last_touch_relative_to_return_date between 61 and 90 then '90 Days'
+		when last_touch_relative_to_return_date between 91 and 120 then '120 Days'
+		when last_touch_relative_to_return_date between 121 and 150 then '150 Days'
+		when last_touch_relative_to_return_date between 151 and 180 then '180 Days'
+		when last_touch_relative_to_return_date between 211 and 210 then '210 Days'
+		when last_touch_relative_to_return_date between 241 and 240 then '240 Days'
+		when last_touch_relative_to_return_date between 271 and 270 then '270 Days'
+		when last_touch_relative_to_return_date between 301 and 300 then '300 Days'
+		when last_touch_relative_to_return_date between 301 and 330 then '330 Days'
+		when last_touch_relative_to_return_date between 331 and 365 then '365 Days'
+		when last_touch_relative_to_return_date > 366 then '365+ Days' 
+	end as [last_touch_relative_to_return_date_age_bucket],
+	[if_not_touched],
+	[times_with_rtr],
+	[return_status],
+	[runtime]
+	INTO [SMS].[DBO].[c_rtr_first_last_touch_tbl]
+FROM #FINAL2
+--------------------------------------------------------------------------------------------------------------
+--					FIRST/LAST TOUCH STORED PROCEDURE ENDS												--
+--------------------------------------------------------------------------------------------------------------
 END;
