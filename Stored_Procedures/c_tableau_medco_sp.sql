@@ -1,6 +1,6 @@
 USE [SMS]
 GO
-/****** Object:  StoredProcedure [dbo].[c_tableau_medco_sp]    Script Date: 1/14/2025 12:57:37 PM ******/
+/****** Object:  StoredProcedure [dbo].[c_tableau_medco_sp]    Script Date: 2/28/2025 11:50:15 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -71,6 +71,10 @@ BEGIN
 							that are not relevant to the report.
 	2025-01-14	v7			Fix inventory logic to start and end at min, max
 							inventory date.
+	2025-01-27  v8			Added acct_type column to base and temp tables 
+	2025-02-28	v9			Updated inventory table to include zero balance,
+							ar balance and total inventory with referred_balance
+							and current acct_balance
 	************************************************************************/
 
 	-- Create the table in the specified schema
@@ -82,6 +86,7 @@ BEGIN
 	(
 		c_tableau_medco_base_tblId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY, -- primary key column
 		pt_no VARCHAR(24),
+		acct_type VARCHAR(24),
 		pa_smart_date DATE,
 		pt_rep VARCHAR(3),
 		pt_rep_description VARCHAR(255),
@@ -99,12 +104,14 @@ BEGIN
 
 	SELECT A.pt_no,
 		A.pa_smart_date,
-		A.pt_rep
+		A.pt_rep,
+		A.acct_type
 	INTO #PTRep_tbl
 	FROM (
 	SELECT (CAST([pa-pt-no-woscd] AS VARCHAR) + CAST([pa-pt-no-scd-1] AS VARCHAR)) AS [pt_no]
 		,LAG(CAST([PA-SMART-DATE] AS DATE),1) OVER (PARTITION BY [PA-PT-NO-WOSCD] ORDER BY CAST([PA-SMART-DATE] AS DATE)) AS [pa_smart_date]
 		,SUBSTRING([PA-SMART-COMMENT], PATINDEX('%[0-9][0-9][0-9]%', [PA-SMART-COMMENT]), 3) AS [pt_rep]
+		,[PA-ACCT-TYPE] as [acct_type]	
 	FROM [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].echo_archive.dbo.accountcomments
 	WHERE [pa-smart-comment] like '%PATIENT REP%'
 
@@ -113,6 +120,7 @@ BEGIN
 	SELECT (CAST([pa-pt-no-woscd] AS VARCHAR) + CAST([pa-pt-no-scd-1] AS VARCHAR)) AS [pt_no]
 		,LAG(CAST([PA-SMART-DATE] AS DATE),1) OVER (PARTITION BY [PA-PT-NO-WOSCD] ORDER BY CAST([PA-SMART-DATE] AS DATE)) AS [pa_smart_date]
 		,SUBSTRING([PA-SMART-COMMENT], PATINDEX('%[0-9][0-9][0-9]%', [PA-SMART-COMMENT]), 3) AS [pt_rep]
+		,[PA-ACCT-TYPE] as [acct_type]
 	FROM [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].echo_active.dbo.accountcomments
 	WHERE [PA-SMART-COMMENT] LIKE '%PATIENT REP%'
 	) AS A;
@@ -152,7 +160,8 @@ BEGIN
 		WHEN pt_rep = '593'
 			THEN 'PREPARING TO SEND'
 		END,
-		system_process = 'RPM'
+		system_process = 'RPM',
+		acct_type
 	INTO #PTRepFinal_tbl
 	FROM #PTREp_tbl;
 
@@ -185,7 +194,8 @@ BEGIN
 		A.pa_smart_date,
 		A.pt_rep,
 		A.pt_rep_description,
-		A.system_process
+		A.system_process,
+		A.acct_type
 	INTO #CommentCodes_tbl
 	FROM (
 		SELECT (CAST([PA-PT-NO-WOSCD] AS VARCHAR) + CAST([PA-PT-NO-SCD-1] AS VARCHAR) ) AS [pt_no],
@@ -200,7 +210,8 @@ BEGIN
 				WHEN (CAST([PA-SMART-SVC-CD-WOSCD] AS VARCHAR) + CAST([PA-SMART-SVC-CD-SCD] AS VARCHAR)) IN ('6999','6957') THEN 'WITH MEDCO'
 				WHEN (CAST([PA-SMART-SVC-CD-WOSCD] AS VARCHAR) + CAST([PA-SMART-SVC-CD-SCD] AS VARCHAR)) IN ('6973','6890') THEN 'PREPARING TO SEND'
 				END,
-			s.[system_process]
+			s.[system_process],
+			[PA-ACCT-TYPE] as [acct_type]
 		FROM [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[Echo_Active].[dbo].[AccountComments]
 		left join @SysTable as s on (CAST([PA-SMART-SVC-CD-WOSCD] AS VARCHAR) + CAST([PA-SMART-SVC-CD-SCD] AS VARCHAR)) = s.Comment_Code
 		WHERE (cast([PA-SMART-SVC-CD-WOSCD] as varchar) + cast([pa-smart-svc-cd-scd] as varchar)) IN ('38035895', '38035903','6999','6973','7005','6932','6957','7013','6908','6916','6924','6890')
@@ -219,7 +230,8 @@ BEGIN
 				WHEN (CAST([PA-SMART-SVC-CD-WOSCD] AS VARCHAR) + CAST([PA-SMART-SVC-CD-SCD] AS VARCHAR)) IN ('6999','6957') THEN 'WITH MEDCO'
 				WHEN (CAST([PA-SMART-SVC-CD-WOSCD] AS VARCHAR) + CAST([PA-SMART-SVC-CD-SCD] AS VARCHAR)) IN ('6973','6890') THEN 'PREPARING TO SEND'
 				END,
-			s.[system_process]
+			s.[system_process],
+			[PA-ACCT-TYPE] as [acct_type]
 		FROM [ECHOLOADERDBP.UHMC.SBUH.STONYBROOK.EDU].[Echo_Archive].[dbo].[AccountComments]
 		left join @SysTable as s on (CAST([PA-SMART-SVC-CD-WOSCD] AS VARCHAR) + CAST([PA-SMART-SVC-CD-SCD] AS VARCHAR)) = s.Comment_Code
 		WHERE (cast([PA-SMART-SVC-CD-WOSCD] as varchar) + cast([pa-smart-svc-cd-scd] as varchar)) IN ('38035895', '38035903','6999','6973','7005','6932','6957','7013','6908','6916','6924','6890')
@@ -243,7 +255,8 @@ BEGIN
 			WHEN Pt_Representative = '   '
 				THEN 'NO REP ASSIGNED'
 			END,
-		system_process = 'RPM'
+		system_process = 'RPM',
+		Acct_Type
 	INTO #ALTRep_tbl
 	FROM SMS.DBO.Pt_Accounting_Reporting_ALT
 	WHERE Pt_Representative IN ('590','591','592','593','   ')
@@ -268,14 +281,16 @@ BEGIN
 		A.pa_smart_date,
 		A.pt_rep,
 		A.pt_rep_description,
-		A.system_process
+		A.system_process,
+		A.acct_type
 	INTO #Base_tbl
 	FROM (
 		SELECT pt_no,
 			pa_smart_date,
 			pt_rep,
 			pt_rep_description,
-			system_process
+			system_process,
+			acct_type
 		FROM #PTRepFinal_tbl
 
 		UNION ALL
@@ -284,7 +299,8 @@ BEGIN
 			pa_smart_date,
 			pt_rep,
 			pt_rep_description,
-			system_process
+			system_process,
+			acct_type
 		FROM #CommentCodes_tbl
 
 		UNION ALL
@@ -293,7 +309,8 @@ BEGIN
 			pa_smart_date,
 			pt_rep,
 			pt_rep_description,
-			system_process
+			system_process,
+			Acct_Type
 		FROM #ALTRep_tbl
 	) AS A;
 
@@ -305,6 +322,7 @@ BEGIN
 		pt_rep,
 		pt_rep_description,
 		system_process,
+		acct_type,
 		next_event = LEAD(pt_rep) OVER(PARTITION BY pt_no ORDER BY pa_smart_date),
 		next_event_description = LEAD(pt_rep_description) OVER(PARTITION BY pt_no ORDER BY pa_smart_date),
 		next_event_system_process = LEAD(system_process) OVER(PARTITION BY pt_no ORDER BY pa_smart_date),
@@ -341,6 +359,7 @@ BEGIN
 		pt_rep,
 		pt_rep_description,
 		system_process,
+		acct_type,
 		next_event_date,
 		next_event,
 		next_event_description,
@@ -376,6 +395,7 @@ BEGIN
 
 	INSERT INTO dbo.c_tableau_medco_base_tbl (
 		pt_no,
+		acct_type,
 		pa_smart_date,
 		pt_rep,
 		pt_rep_description,
@@ -388,6 +408,11 @@ BEGIN
 		days_until_next_event
 	)
 	SELECT pt_no,
+		acct_type = CASE
+						WHEN acct_type in ('IP','1','2','4','8')
+							THEN 'IP' -- 1=IP; 2=A/R; 4=I/P BAD DEBT; 8=I/P HISTORIC
+						ELSE 'OP' -- 0=OP; 6=OP BAD DEBT; 7=OP HISTORIC 
+					END,
 		pa_smart_date,
 		pt_rep,
 		pt_rep_description,
@@ -844,21 +869,27 @@ BEGIN
 	IF OBJECT_ID('dbo.c_tableau_medco_inventory_tbl', 'U') IS NOT NULL
 		DROP TABLE dbo.c_tableau_medco_inventory_tbl;
 
-
 	CREATE TABLE dbo.c_tableau_medco_inventory_tbl (
 		c_tableau_medco_inventory_tblId INT IDENTITY(1, 1) NOT NULL PRIMARY KEY, -- primary key column
 		inventory_date DATE,
-		vendor_inventory INT
+		--pt_no VARCHAR(24),
+		vendor_zero_balance_inventory INT,
+		vendor_ar_balance_inventory INT,
+		vendor_inventory INT,
+		referred_balance NVARCHAR(24),
+		acct_balance NVARCHAR(24)
 		);
 
 	DECLARE @TODAY AS DATE;
 	DECLARE @STARTDATE AS DATE;
 	DECLARE @ENDDATE AS DATE;
 
+	
 	SET @TODAY = GETDATE();
 	SET @STARTDATE = (SELECT MIN(pa_smart_date) FROM sms.dbo.c_tableau_times_with_medco_tbl);
 	SET @ENDDATE = (SELECT MAX(pa_smart_date) FROM sms.dbo.c_tableau_times_with_medco_tbl);
 
+	
 	WITH dates AS (
 		SELECT @STARTDATE AS dte
 
@@ -871,24 +902,49 @@ BEGIN
 
 	INSERT INTO dbo.c_tableau_medco_inventory_tbl (
 		inventory_date,
-		vendor_inventory
+		--pt_no,
+		vendor_zero_balance_inventory,
+		vendor_ar_balance_inventory,
+		vendor_inventory,
+		referred_balance,
+		acct_balance
 	)
-	SELECT inventory_date = A.dte,
-		vendor_inventory = 
-			SUM	(
-				CASE
-                     WHEN B.pa_smart_date <= A.DTE
-                           AND ISNULL(B.next_event_date, GETDATE()) >= A.DTE
-                           THEN 1
-                     ELSE 0
-                     END
-              )
-	FROM dates AS A
-	LEFT JOIN sms.dbo.c_tableau_times_with_medco_tbl AS B ON B.pa_smart_date <= DATEADD(WEEK, 1, A.DTE)
+	SELECT distinct inventory_date = A.dte,
+    	--pt_no = B.pt_no,
+    	vendor_zero_balance_inventory = SUM(
+			CASE WHEN B.pa_smart_date <= A.DTE
+				AND ISNULL(B.next_event_date, GETDATE()) >= A.DTE
+				AND C.Acct_Balance = 0
+				THEN 1
+			ELSE 0
+			END
+		),
+		vendor_ar_balance_inventory = SUM(
+			CASE WHEN B.pa_smart_date <= A.DTE
+				AND ISNULL(B.next_event_date, GETDATE()) >= A.DTE
+				AND C.Acct_Balance != 0
+				THEN 1
+			ELSE 0
+			END
+		),
+		vendor_inventory = SUM(
+			CASE WHEN B.pa_smart_date <= A.DTE
+				AND ISNULL(B.next_event_date, GETDATE()) >= A.DTE
+                THEN 1
+            ELSE 0
+            END
+        ),
+    	referred_balance = SUM(ISNULL(C.Acct_Balance, 0)),
+    	acct_balance = SUM(ISNULL(D.Balance, 0))
+    FROM dates AS A
+    LEFT JOIN sms.dbo.c_tableau_times_with_medco_tbl AS B ON B.pa_smart_date <= DATEADD(WEEK, 1, A.DTE)
        AND ISNULL(B.next_event_date, GETDATE()) >= A.dte
-	WHERE A.dte <= @ENDDATE
-	GROUP BY A.dte
-	ORDER BY A.dte
-	OPTION (MAXRECURSION 0);
+    LEFT JOIN SMS.dbo.Vendor_Referred_Balances AS C ON B.pt_no = C.Pt_No
+    	AND C.Vendor = 'MEDCO'
+    LEFT JOIN SMS.dbo.Pt_Accounting_Reporting_ALT AS D ON B.pt_no = D.Pt_No
+    WHERE A.dte <= @ENDDATE
+    GROUP BY A.dte
+    ORDER BY A.dte
+    OPTION (MAXRECURSION 0);
 
 END;
