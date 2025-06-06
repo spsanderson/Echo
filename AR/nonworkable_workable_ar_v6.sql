@@ -16,6 +16,7 @@ Tables/Views:
 	SMS.dbo.Pt_Accounting_Reporting_ALT_for_Tableau
 	SMS.dbo.c_Finthrive_Last_Bill_Date_tbl
 	sms.dbo.c_assigned_worklist_tbl
+	sms.dbo.c_productivity_combined
 
 Creates Table/View:
 	None
@@ -48,6 +49,7 @@ Date		Version		Description
 2025-04-29	v2			Add new logic for the c_assigned_worklist_tbl table
 2025-04-30	v3			Add CYCLE_OF_WL to get worklist cycles,
 						Add EXPECTED_PAYEMNT in order to get AR DAYS
+2025-05-21				Add new logic and table (sms.dbo.c_productivity_combined) to get accounts with 3+ touches
 ***********************************************************************
 */
 
@@ -1224,6 +1226,9 @@ WORKABLE_INDICATOR,
 DEPARTMENT_CLEAN
 ORDER BY WORKABLE_INDICATOR
 
+
+
+--WORKABLE/WORKABLE_PENDING COMBINED--
 SELECT 
 DEPARTMENT_CLEAN,
 [GT_$5K] = SUM(GT_5K),
@@ -1237,3 +1242,27 @@ WHERE [FILE] != 'BAD DEBT'
 GROUP BY 
 DEPARTMENT_CLEAN
 
+--WORKABLE/WORKABLE_PENDING COMBINED 3+ TOUCHES--
+DROP TABLE IF EXISTS #MORE_THAN_THREE_TOUCHES
+SELECT 
+A.DEPARTMENT_CLEAN,
+TOUCHES = COUNT(*)
+INTO #MORE_THAN_THREE_TOUCHES
+FROM #FINAL AS A
+INNER JOIN sms.dbo.c_productivity_combined AS B ON A.Pt_No = B.pt_no AND ISNULL(CAST(A.Unit_Date AS DATE), '') = ISNULL(CAST(B.unit_date AS DATE),'')
+WHERE [FILE] != 'BAD DEBT'
+	AND WORKABLE_INDICATOR IN ('WORKABLE', 'WORKABLE_PENDING')
+GROUP BY 
+DEPARTMENT_CLEAN,
+A.PT_NO, 
+B.unique_user_id,
+B.fol_amt,
+B.unit_date,
+B.unique_date
+
+SELECT DEPARTMENT_CLEAN,
+ ACCTS_OVER_THREE_TOUCHES = COUNT(*)
+FROM #MORE_THAN_THREE_TOUCHES
+WHERE TOUCHES > 3
+GROUP BY DEPARTMENT_CLEAN
+ORDER BY DEPARTMENT_CLEAN
