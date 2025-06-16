@@ -81,18 +81,33 @@ write_xlsx(
 # Create a table if not exists called: c_anthem_prefixes_tbl
 con_obj <- db_connect()
 
-dbWriteTable(
-  conn = con_obj,
-  Id(
-    schema = "dbo",
-    table = "c_anthem_prefixes_tbl"
-  ),
-  page_tbl |>
-    select(plan_identifier_prefix, plan_name),
-  overwrite = TRUE,
-  row.names = FALSE
-)
-
+if (dbExistsTable(con_obj, "c_anthem_prefixes_tbl")){
+  dbWriteTable(
+    conn = con_obj,
+    Id(
+      schema = "dbo",
+      table = "c_anthem_prefixes_tbl"
+    ),
+    page_tbl |>
+      select(plan_identifier_prefix, plan_name) |>
+      mutate(insert_date = as.Date(Sys.Date())),
+    append = TRUE,
+    overwrite = FALSE,
+    row.names = FALSE
+  )
+} else {
+  dbWriteTable(
+    conn = con_obj,
+    Id(
+      schema = "dbo",
+      table = "c_anthem_prefixes_tbl"
+    ),
+    page_tbl |>
+      select(plan_identifier_prefix, plan_name) |>
+      mutate(insert_date = as.Date(Sys.Date())),
+    row.names = FALSE
+  )
+}
 # Query table and count the rows just inserted into c_anthme_prefixes_tbl
 rows_inserted <- dbGetQuery(con_obj, "SELECT COUNT(*) AS row_count FROM dbo.c_anthem_prefixes_tbl")[[1]]
 
