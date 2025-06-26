@@ -46,12 +46,43 @@ page_tbl <- page_tbl |>
 
 page_tbl <- page_tbl |>
   mutate(
-    table_data = map(table_data,~ .x[[1]] |> 
+    table_data = map(table_data, ~ .x[[1]] |> 
                        select(1, 2) |>
                        set_names(c("plan_identifier_prefix", "plan_name"))
     )
   ) |>
   unnest(cols = c(table_data))
+
+# Get a distinct list of links where the plan_identifier_prefix == ''
+missing_prefixes_link_tbl <- page_tbl |>
+  filter(plan_identifier_prefix == "") |>
+  distinct(link, page_data)
+
+missing_prefixes_link_tbl <- missing_prefixes_link_tbl |>
+  mutate(
+    page_data = map(link, read_html)
+  )
+
+missing_prefixes_link_tbl <- missing_prefixes_link_tbl |>
+  mutate(
+    table_data = map(page_data, ~ html_table(.x))
+  )
+
+missing_prefixes_link_tbl <- missing_prefixes_link_tbl |>
+  mutate(
+    table_data = map(table_data, ~ .x[[1]] |>
+                       select(1, 2) |>
+                       set_names(c("plan_identifier_prefix", "plan_name"))
+    )
+  ) |>
+  unnest(cols = c(table_data))
+
+# Combine the two tables into one
+page_tbl <- page_tbl |>
+  select(link, plan_identifier_prefix, plan_name) |>
+  bind_rows(missing_prefixes_link_tbl |>
+              select(link, plan_identifier_prefix, plan_name)) |>
+  distinct()
 
 # Write to Share Drive ----------------------------------------------------
 
@@ -108,8 +139,16 @@ if (dbExistsTable(con_obj, "c_anthem_prefixes_tbl")){
     row.names = FALSE
   )
 }
+
 # Query table and count the rows just inserted into c_anthme_prefixes_tbl
-rows_inserted <- dbGetQuery(con_obj, "SELECT COUNT(*) AS row_count FROM dbo.c_anthem_prefixes_tbl")[[1]]
+rows_inserted <- dbGetQuery(con_obj, "
+                            SELECT COUNT(*) AS row_count 
+                            FROM dbo.c_anthem_prefixes_tbl
+                            WHERE insert_date = (
+                              SELECT MAX(insert_date) 
+                              FROM dbo.c_anthem_prefixes_tbl
+                            )
+                            ")[[1]]
 
 db_disconnect(con_obj)
 
