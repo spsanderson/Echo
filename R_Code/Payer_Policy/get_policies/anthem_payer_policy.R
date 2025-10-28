@@ -2,7 +2,12 @@ library(httr2)
 library(tidyverse)
 
 jsonurl <- "https://providers.anthem.com/sites/Satellite?d=Universal&pagename=getdocuments&brand=BCCNYE&state=&formslibrary=gpp_formslib"
-f_path <- "W:/PATACCT/BusinessOfc/Revenue Cycle Analyst/Payer_Policies/Anthem_PDFs/"
+#f_path <- "W:/PATACCT/BusinessOfc/Revenue Cycle Analyst/Payer_Policies/Anthem_PDFs/"
+f_path <- paste0(getwd(), "/Anthem_PDFs/")
+# Make directory if not exists
+if (!dir.exists(f_path)) {
+  dir.create(f_path)
+}
 
 # Step 1: Perform the GET request and parse the JSON response
 response <- request(jsonurl) |> 
