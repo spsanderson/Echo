@@ -17,7 +17,8 @@ source(file = "helper_functions/payer_policy_helpers.r")
 
 # Path of Policies ----
 
-base_path <- "W:/PATACCT/BusinessOfc/Revenue Cycle Analyst/Payer_Policies/"
+#base_path <- "W:/PATACCT/BusinessOfc/Revenue Cycle Analyst/Payer_Policies/"
+base_path <- paste0(getwd())
 pdf_base_paths <- dir_ls(base_path, regexp = "\\PDFs$")
 pdf_base_paths
 
@@ -113,9 +114,9 @@ output_list <- vector("list", length = length(file_split_tbl))
 names(output_list) <- all_files_tbl$file_name
 
 for (i in seq_along(file_split_tbl)) {
-  if (i < 385) {
-    next
-  }
+  #if (i < 385) {
+  #  next
+  #}
   # Progress
   message(
     "Working on file number: ",
@@ -172,7 +173,7 @@ for (i in seq_along(file_split_tbl)) {
 
   # Chat Client
   #"qwen3-vl:235b-cloud"
-  chat_model = "qwen3:0.6b" #"qwen3-vl:235b-cloud"
+  chat_model = "llama3.2:latest" #"qwen3:0.6b" #"qwen3-vl:235b-cloud"
   message("Creating chat client with model: ", chat_model)
   tic()
   client <- chat_ollama(
