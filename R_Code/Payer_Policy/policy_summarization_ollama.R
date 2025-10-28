@@ -124,11 +124,11 @@ for (i in seq_along(file_split_tbl)) {
     i,
     " of ",
     length(file_split_tbl),
-    " files."
+    " file(s). \n"
   )
   obj <- file_split_tbl[[i]]
   file_path <- obj |> pull(2) |> pluck(1)
-  message("Working on file: ", file_path)
+  message("Working on file: ", file_path, "\n")
 
   # Storage ----
   embedding_model <- "nomic-embed-text:latest" #"qllama/bge-large-en-v1.5:q4_k_m"
@@ -139,8 +139,8 @@ for (i in seq_along(file_split_tbl)) {
     embed = \(x) embed_ollama(x, model = embedding_model),
     overwrite = TRUE
   )
-  message("Created store")
   toc()
+  message("Created store \n")
 
   # Chunking
   message("Chunking file")
@@ -155,7 +155,8 @@ for (i in seq_along(file_split_tbl)) {
     " End: ",
     max(chunks$end),
     " Rows: ",
-    nrow(chunks)
+    nrow(chunks),
+    "\n"
   )
 
   # Insert into storage
@@ -163,18 +164,18 @@ for (i in seq_along(file_split_tbl)) {
   tic()
   ragnar_store_insert(store, chunks)
   toc()
-  message("Inserted into storage")
+  message("Inserted into storage \n")
 
   # Build index
   message("Building index")
   tic()
   ragnar_store_build_index(store)
   toc()
-  message("Built index")
+  message("Built index \n")
 
   # Chat Client
   #"qwen3-vl:235b-cloud"
-  chat_model = "llama3.2:latest" #"qwen3:0.6b" #"qwen3-vl:235b-cloud"
+  chat_model = "llama3.2" #"qwen3:0.6b" #"qwen3-vl:235b-cloud"
   message("Creating chat client with model: ", chat_model)
   tic()
   client <- chat_ollama(
@@ -183,7 +184,7 @@ for (i in seq_along(file_split_tbl)) {
     params = list(temperature = 0.1)
   )
   toc()
-  message("Created chat client")
+  message("Created chat client \n")
 
   # Set Tool
   message("Setting tool")
@@ -193,7 +194,7 @@ for (i in seq_along(file_split_tbl)) {
     store = store
   )
   toc()
-  message("Set tool")
+  message("Set tool \n")
 
   # Get response
   user_prompt <- glue("Please summarize this policy: {file_path}.")
@@ -202,18 +203,20 @@ for (i in seq_along(file_split_tbl)) {
   res <- client$chat(user_prompt, echo = "all")
   cat("\n")
   toc()
-  message("Got response")
+  message("Got response \n")
 
   # Add response to obj tibble
   message("Adding response to obj")
   rec <- obj |> mutate(llm_resp = res)
-  message("Added response to obj")
+  message("Added response to obj \n")
 
   # Delete RAG Store
   message("Deleting RAG store via unlink().")
   unlink(paste0(getwd(), "/pdf_ragnar_duckdb"))
   unlink(paste0(getwd(), "/pdf_ragnar_duckdb.wal"))
   message("Files unlinked. \n")
+  cat('----\n')
+  
   # Return tibble
   output_list[[i]] <- rec
 }
