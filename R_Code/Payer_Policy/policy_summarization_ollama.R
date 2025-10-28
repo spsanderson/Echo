@@ -215,7 +215,7 @@ for (i in seq_along(file_split_tbl)) {
   unlink(paste0(getwd(), "/pdf_ragnar_duckdb"))
   unlink(paste0(getwd(), "/pdf_ragnar_duckdb.wal"))
   message("Files unlinked. \n")
-  cat('----\n')
+  message("----\n")
 
   # Return tibble
   output_list[[i]] <- rec
