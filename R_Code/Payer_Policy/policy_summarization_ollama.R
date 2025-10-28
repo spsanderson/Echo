@@ -115,9 +115,9 @@ output_list <- vector("list", length = length(file_split_tbl))
 names(output_list) <- all_files_tbl$file_name
 
 for (i in seq_along(file_split_tbl)) {
-  #if (i < 385) {
-  #  next
-  #}
+  if (i < 26) {
+    next
+  }
   # Progress
   message(
     "Working on file number: ",
