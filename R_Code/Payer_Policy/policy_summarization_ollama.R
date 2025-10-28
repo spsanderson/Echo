@@ -9,6 +9,7 @@ library(blastula)
 library(RDCOMClient)
 library(rlang)
 library(tictoc)
+library(reticulate)
 
 # Source Files ----
 
