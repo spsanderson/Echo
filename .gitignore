@@ -1,2 +1,4 @@
 *.xls
 *.pdf
+R_Code/Payer_Policy/pdf_ragnar_duckdb
+*.wal
