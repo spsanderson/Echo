@@ -216,65 +216,10 @@ for (i in seq_along(file_split_tbl)) {
   unlink(paste0(getwd(), "/pdf_ragnar_duckdb.wal"))
   message("Files unlinked. \n")
   cat('----\n')
-  
+
   # Return tibble
   output_list[[i]] <- rec
 }
-
-llm_resp_list <- file_split_tbl |>
-  imap(
-    .f = function(obj, id) {
-      # File path
-      file_path <- obj |> pull(2) |> pluck(1)
-
-      # Storage ----
-
-      store <- ragnar_store_create(
-        store_location,
-        embed = \(x) embed_ollama(x, model = "nomic-embed-text:latest"),
-        overwrite = TRUE
-      )
-
-      # Chunking
-      chunks <- file_path |>
-        read_as_markdown() |>
-        markdown_chunk()
-
-      # Insert into storage
-      ragnar_store_insert(store, chunks)
-
-      # Build index
-      ragnar_store_build_index(store)
-
-      # Chat Client
-      # "qwen3:0.6b"
-      client <- chat_ollama(
-        model = "gpt-oss:20b-cloud",
-        system_prompt = system_prompt,
-        params = list(temperature = 0.1)
-      )
-
-      # Set Tool
-      ragnar_register_tool_retrieve(
-        chat = client,
-        store = store
-      )
-
-      # Get response
-      user_prompt <- glue("Please summarize the policy: {file_path}")
-      res <- client$chat(user_prompt, echo = "all")
-
-      # Add response to obj tibble
-      rec <- obj |> mutate(llm_resp = res)
-
-      # Delete RAG Store
-      unlink(paste0(getwd(), "/pdf_ragnar_duckdb"))
-      unlink(paste0(getwd(), "/pdf_ragnar_duckdb.wal"))
-
-      # Return tibble
-      return(rec)
-    }
-  )
 
 # Email files to DoTadda Dots ----
 ## Emails ----
