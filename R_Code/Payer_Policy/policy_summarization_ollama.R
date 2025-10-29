@@ -297,4 +297,4 @@ markdown_sections <- map_chr(1:nrow(output_tbl), function(i) {
 markdown_doc <- paste(markdown_sections, collapse = "\n---\n")
 
 # Write to file
-write_file(markdown_doc, paste0(getwd(), "/test_policy_output.md"))
+write_file(markdown_doc, paste0(getwd(), "/anthem_policy_output.md"))
