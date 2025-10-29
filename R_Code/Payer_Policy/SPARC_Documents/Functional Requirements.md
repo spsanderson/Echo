@@ -1,6 +1,7 @@
 # **Functional Requirements: Local LLM RAG SQL Query Application**
 
 ---
+[Back to Main SPARC Documentation](SQL%20LLM%20RAG%20Project%20SPARC.md)
 
 ## **Overview**
 
@@ -874,3 +875,5 @@ The system shall maintain comprehensive logs of all queries, user actions, and s
 **Total**: 12 major functional requirements, 59 detailed sub-requirements
 
 Each requirement is designed to be testable, measurable, and traceable to user needs. The breakdown enables incremental development and clear acceptance criteria for each component.
+
+[Back to Main SPARC Documentation](SQL%20LLM%20RAG%20Project%20SPARC.md)
