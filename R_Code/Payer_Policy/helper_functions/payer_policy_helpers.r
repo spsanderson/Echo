@@ -65,7 +65,7 @@ row_to_md <- function(row) {
 
   md <- paste0(
     '**File Path:** "',
-    row$file_path,
+    row$full_file_path,
     '"\n\n',
     '**File Name:** "',
     row$file_name,
