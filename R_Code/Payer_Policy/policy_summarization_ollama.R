@@ -115,7 +115,7 @@ output_list <- vector("list", length = length(file_split_tbl))
 names(output_list) <- all_files_tbl$file_name
 
 for (i in seq_along(file_split_tbl)) {
-  if (i < 26) {
+  if (i < 11) {
     next
   }
   # Progress
@@ -175,7 +175,7 @@ for (i in seq_along(file_split_tbl)) {
 
   # Chat Client
   #"qwen3-vl:235b-cloud"
-  chat_model = "llama3.2" #"qwen3:0.6b" #"qwen3-vl:235b-cloud"
+  chat_model = "qwen3-vl:235b-cloud" #"llama3.2" #"qwen3:0.6b" #"qwen3-vl:235b-cloud"
   message("Creating chat client with model: ", chat_model)
   tic()
   client <- chat_ollama(
@@ -229,7 +229,7 @@ email_address_emblem <- "66d8d49f-d5d3-435e-9de0-e97d3b38193e@email.dotadda.io"
 email_address_cigna <- "04194f37-df4e-4450-9bc1-7519aa64d53d@email.dotadda.io"
 
 ## Create Email Body ----
-output_tbl <- list_rbind(llm_resp_list) |>
+output_tbl <- list_rbind(output_list) |>
   mutate(
     email_body = md(glue(
       "
@@ -289,3 +289,12 @@ walk(
     Sys.sleep(trunc(runif(1, 1, 3)))
   }
 )
+
+# Apply to all rows and separate with ---
+markdown_sections <- map_chr(1:nrow(output_tbl), function(i) {
+  row_to_md(output_tbl[i, ])
+})
+markdown_doc <- paste(markdown_sections, collapse = "\n---\n")
+
+# Write to file
+write_file(markdown_doc, paste0(getwd(), "/test_policy_output.md"))
