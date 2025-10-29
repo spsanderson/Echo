@@ -36,7 +36,7 @@ Great project! Let's structure this using the SPARC framework to build a robust 
 
 ### Support Documents
 
-- [Functional Requirements](Functional Requirements.md)
+- ![Functional Requirements](Functional Requirements.md)
 
 ---
 
