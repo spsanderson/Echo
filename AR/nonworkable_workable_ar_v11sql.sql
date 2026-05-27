@@ -38,7 +38,17 @@ Purpose/Description
 		A.Balance != 0
 		OR (
 			A.BALANCE = 0
-			AND COALESCE(A.[Worklist on Ins1], A.[Worklist on Ins2], A.[Worklist on Ins3], A.[Worklist on Ins4], A.[Worlist on Pt]) IS NOT NULL
+			AND COALESCE(A.[Worklist on Ins1], A.[Worklist on Ins2], A.[Worklist on Ins3], A.[Worklist on Ins4], A.[Worklist on Pt]) IS NOT NULL
+		)
+		OR (
+			A.BALANCE = 0
+			AND EXISTS (
+			SELECT 1
+			FROM #NOIR AS ZZZ
+			WHERE A.PT_NO = ZZZ.PT_NO
+			AND ISNULL(A.UNIT_DATE,'') = ISNULL(ZZZ.UNIT_DATE,'')
+			AND ISNULL(CAST(A.UNIT_NO AS VARCHAR),'999999') = ISNULL(CAST(ZZZ.UNIT_NO AS VARCHAR),'999999')
+			)
 		)
 	)
 
@@ -59,7 +69,7 @@ Date		Version		Description
 2025-12-30	v9			Added additional vendor rep numbers to exclude from
                         workable accounts for the MED-METRIX AR book of
                         business.
-2026-01-05	v10			Updated Med-Metrix logic to user the userdefined 28
+2026-01-05	v10			Updated Med-Metrix logic to use the userdefined 28
 						record that is current for the account.
 ***********************************************************************
 */
@@ -235,6 +245,10 @@ AND B.FileCreated = @CW_FC_DATE
 AND A.REPORT_DATE = (SELECT MAX(REPORT_DATE) FROM SMS.DBO.C_ASSIGNED_WORKLIST_TBL);
 
 -- NOIR Population
+/*
+NOIR There are workable and not workable accounts
+Workable: $5k >= (Primary) See Tenzin SQL for Tableau DB
+*/
 DROP TABLE IF EXISTS #NOIR;
 SELECT [pt_no] = CAST(A.[PA-PT-NO-WOSCD] AS VARCHAR) + CAST(A.[PA-PT-NO-SCD-1] AS VARCHAR),
 	[unit_no] = CASE WHEN B.[PA-UNIT-NO] IS NOT NULL THEN B.[PA-UNIT-NO] ELSE NULL END,
@@ -964,6 +978,10 @@ SELECT PT_NO,
 			AND BUCKET_INS_CODE_LAST_BILLED_DATE IS NOT NULL
 			AND BUCKET_INS_CODE_LAST_FOLLOW_UP_DATE >= DATEADD(DAY, - 34, DATEADD(DAY, -2, CAST(DATEADD(wk, DATEDIFF(wk, 0, GETDATE()), 0) AS DATE)))
 			THEN 'GOVERNMENTAL FOLLOW UP PENDING'
+		-- testing for L, I, Q change from NON-GOVERNMENTAL BILLING to NON-GOVERNMENTAL FOLLOW UP
+		WHEN LEFT(BUCKET_INS_CODE, 1) IN ('L','I','Q')
+			AND DEPARTMENT = 'NON-GOVERNMENTAL BILLING'
+			THEN 'NON-GOVERNMENTAL FOLLOW UP PENDING'
 		END,
 	[RESPONSIBLE COLLECTOR],
 	SUPERVISOR,
@@ -1362,4 +1380,4 @@ WHERE [FILE] != 'BAD DEBT'
 GROUP BY 
 WORKABLE_INDICATOR,
 DEPARTMENT_CLEAN
-ORDER BY WORKABLE_INDICATOR;
+ORDER BY WORKABLE_INDICATOR
