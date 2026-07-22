@@ -24,9 +24,9 @@ PR AS (
             ELSE 0
         END
     FROM CTE AS CTE
-),
+)
 
-CARC_RARC_CD AS (
+--CARC_RARC_CD AS (
     SELECT PR.Patient_Control_Number,
         PR.Ins_CD,
         PR.CLAIM_STATUS,
@@ -45,11 +45,10 @@ CARC_RARC_CD AS (
     )
     --AND PR.Patient_Control_Number = '01025904628100B14003'
     AND CAST(PR.LINE_ADJUSTMENT_GROUP_CODE AS VARCHAR(5)) + CAST(PR.LINE_ADJUSTMENT_REASON_CODE AS VARCHAR(5)) NOT IN ('PR1', 'PR2', 'PR3')
-)
-
-SELECT top 10 A.Patient_Control_Number,
-    A.Ins_CD, A.CLAIM_STATUS,
-    A.BILL_TYPE,
-    COMBINED_CARC_RARC_CODE = STRING_AGG(A.CARC_RARC_CODE, ', ')
-FROM CARC_RARC_CD AS A
-GROUP BY A.Patient_Control_Number, A.Ins_CD, A.CLAIM_STATUS, A.BILL_TYPE
+--)
+--SELECT top 10 A.Patient_Control_Number,
+--    A.Ins_CD, A.CLAIM_STATUS,
+--    A.BILL_TYPE,
+--    COMBINED_CARC_RARC_CODE = STRING_AGG(A.CARC_RARC_CODE, ', ')
+--FROM CARC_RARC_CD AS A
+--GROUP BY A.Patient_Control_Number, A.Ins_CD, A.CLAIM_STATUS, A.BILL_TYPE
