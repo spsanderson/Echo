@@ -24,7 +24,7 @@ df_combined_tbl <- df_modified_tbl |>
   arrange(LINE_ADJUSTMENT_GROUP_CODE, LINE_ADJUSTMENT_REASON_CODE) |>
   group_by(INS_CD, CLAIM_STATUS, BILL_TYPE) |>
   mutate(
-    COMBINED_CODES = str_flatten(CARC_RARC_CODE, collapse = " -> ")
+    COMBINED_CODES = str_flatten(unique(CARC_RARC_CODE), collapse = " -> ")
   ) |>
   ungroup()
 
