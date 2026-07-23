@@ -7,7 +7,7 @@ library(writexl)
 
 # Read in Excel file ----
 df_tbl <- read_excel("combined_carc_rarc_data.xlsx")
-head(df)
+head(df_tbl)
 
 ## Select out the needed columns ----
 df_modified_tbl <- df_tbl |>
