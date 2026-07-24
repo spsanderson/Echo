@@ -9,6 +9,7 @@ WITH CTE AS (
     FROM SMS.DBO.c_remit_JOIN_ALL_TBL
     WHERE CHECK_EFT_DATE >= '2026-01-01'
     AND CHECK_EFT_DATE < '2026-07-01'
+    AND PARENT_NAME = 'Stony Brook University Hospital'
 ),
 
 PR AS (
