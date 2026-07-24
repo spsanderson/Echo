@@ -6,13 +6,14 @@ library(stringr)
 library(writexl)
 
 # Read in Excel file ----
-df_tbl <- read_excel("combined_carc_rarc_data.xlsx")
+df_tbl <- read_excel("combined_carc_rarc_data_sps_rundate_2026-07-24_1037.xlsx")
 head(df_tbl)
+names(df_tbl)
 
 ## Select out the needed columns ----
 df_modified_tbl <- df_tbl |>
   # Drop records where the PCN == 0
-  filter(Patient_Control_Number != 0)
+  filter(PATIENT_CONTROL_NUMBER != 0)
 
 ## Factor the LINE_ADJUSTMENT_GROUP column ----
 df_modified_tbl <- df_modified_tbl |>
@@ -26,6 +27,12 @@ df_combined_tbl <- df_modified_tbl |>
   group_by(INS_CD, CLAIM_STATUS, BILL_TYPE) |>
   mutate(
     COMBINED_CODES = str_flatten(unique(CARC_RARC_CODE), collapse = " -> ")
+  ) |>
+  ungroup() |>
+  # Get a row_number by pcn to show the order of claims
+  group_by(PATIENT_CONTROL_NUMBER) |>
+  mutate(
+    claim_number = dense_rank(CHECK_EFT_DATE)
   ) |>
   ungroup()
 
