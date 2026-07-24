@@ -7,7 +7,9 @@ library(writexl)
 library(lubridate)
 
 # Read in Excel file ----
-df_tbl <- read_excel("combined_carc_rarc_data_sps_rundate_2026-07-24_1037.xlsx") |>
+df_tbl <- read_excel(
+  "combined_carc_rarc_data_sps_rundate_2026-07-24_1037.xlsx"
+) |>
   mutate(
     CHECK_EFT_DATE = ymd(CHECK_EFT_DATE)
   )
@@ -36,7 +38,8 @@ df_combined_tbl <- df_modified_tbl |>
   # Get a row_number by pcn to show the order of claims
   group_by(PATIENT_CONTROL_NUMBER) |>
   mutate(
-    claim_number = dense_rank(CHECK_EFT_DATE)
+    ascending_claim_number = dense_rank(CHECK_EFT_DATE),
+    descending_claim_number = dense_rank(desc(CHECK_EFT_DATE))
   ) |>
   ungroup()
 
