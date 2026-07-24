@@ -4,9 +4,13 @@ library(dplyr)
 library(readxl)
 library(stringr)
 library(writexl)
+library(lubridate)
 
 # Read in Excel file ----
-df_tbl <- read_excel("combined_carc_rarc_data_sps_rundate_2026-07-24_1037.xlsx")
+df_tbl <- read_excel("combined_carc_rarc_data_sps_rundate_2026-07-24_1037.xlsx") |>
+  mutate(
+    CHECK_EFT_DATE = ymd(CHECK_EFT_DATE)
+  )
 head(df_tbl)
 names(df_tbl)
 
