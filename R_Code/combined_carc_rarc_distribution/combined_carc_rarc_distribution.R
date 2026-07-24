@@ -11,7 +11,9 @@ head(df_tbl)
 
 ## Select out the needed columns ----
 df_modified_tbl <- df_tbl |>
-  rename(INS_CD = Ins_CD)
+  rename(INS_CD = Ins_CD) |>
+  # Drop records where the PCN == 0
+  filter(Patient_Control_Number != 0)
 
 ## Factor the LINE_ADJUSTMENT_GROUP column ----
 df_modified_tbl <- df_modified_tbl |>
