@@ -1,4 +1,52 @@
-*.xls
-*.pdf
-R_Code/Payer_Policy/pdf_ragnar_duckdb
-*.wal
+# Strict mode: ignore everything by default
+*
+
+# Keep directories traversable so unignored files can be tracked
+!*/
+
+# Keep this file tracked
+!.gitignore
+
+# ---------- Allowed programming language/source files ----------
+
+# R
+!*.R
+!*.r
+
+# Python
+!*.py
+!*.PY
+
+# SQL / T-SQL
+!*.sql
+!*.SQL
+!*.tsql
+!*.TSQL
+
+# VBA / VB module forms (common exports)
+!*.vba
+!*.VBA
+!*.bas
+!*.BAS
+!*.cls
+!*.CLS
+!*.frm
+!*.FRM
+
+# C / C++
+!*.c
+!*.C
+!*.cc
+!*.CC
+!*.cpp
+!*.CPP
+!*.cxx
+!*.CXX
+!*.h
+!*.H
+!*.hh
+!*.HH
+!*.hpp
+!*.HPP
+!*.hxx
+!*.HXX
